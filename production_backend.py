@@ -111,9 +111,9 @@ class FeatureEngineer:
     def __init__(self):
         try:
             self.rainfall_df = pd.read_csv(RAINFALL_HISTORICAL)
-            self.rainfall_df['date'] = pd.to_datetime(self.rainfall_df['date'])
+            self.rainfall_df['date'] = pd.to_datetime(self.rainfall_df['date'], format='mixed')
             self.weather_df = pd.read_csv(WEATHER_DRIVERS)
-            self.weather_df['date'] = pd.to_datetime(self.weather_df['date'])
+            self.weather_df['date'] = pd.to_datetime(self.weather_df['date'], format='mixed')
             
             with open(FEATURE_SCHEMA, 'r') as f:
                 self.schema = json.load(f)
@@ -137,8 +137,8 @@ class FeatureEngineer:
         today = datetime.now()
         if ref_dt > today + timedelta(days=30):
             raise InvalidDateError("Date too far in future (max 30 days ahead)")
-        if ref_dt < today - timedelta(days=365):
-            raise InvalidDateError("Date too far in past (max 1 year back)")
+        if ref_dt < today - timedelta(days=3650):
+            raise InvalidDateError("Date too far in past (max 10 years back)")
         
         # B5: Filter rainfall data strictly before reference date
         rain_data = self.rainfall_df[
@@ -159,6 +159,23 @@ class FeatureEngineer:
         rain_lag_30 = last_30_days.iloc[0]['rainfall']
         rolling_30_rain = last_30_days['rainfall'].sum()
         
+        # NEW: Drought-specific features
+        rolling_60_rain = rain_data.tail(60)['rainfall'].sum() if len(rain_data) >= 60 else rain_data['rainfall'].sum()
+        rolling_90_rain = rain_data.tail(90)['rainfall'].sum() if len(rain_data) >= 90 else rain_data['rainfall'].sum()
+        dry_days_count = (last_30_days['rainfall'] < 2).sum()  # Days with < 2mm rain
+        
+        # Calculate deficit vs historical average for this month
+        hist_same_month = self.rainfall_df[
+            (self.rainfall_df['taluk'] == taluk) &
+            (self.rainfall_df['date'].dt.month == ref_dt.month) &
+            (self.rainfall_df['date'].dt.year < ref_dt.year)
+        ]
+        if len(hist_same_month) > 0:
+            avg_monthly = hist_same_month.groupby(hist_same_month['date'].dt.year)['rainfall'].sum().mean()
+            rain_deficit = rolling_30_rain - (avg_monthly / 30 * 30)  # Deficit from normal
+        else:
+            rain_deficit = 0
+        
         # Get weather data for reference date (or closest before)
         weather_data = self.weather_df[
             (self.weather_df['taluk'] == taluk) &
@@ -172,11 +189,15 @@ class FeatureEngineer:
         
         latest_weather = weather_data.iloc[-1]
         
-        # Build feature dict
+        # Build feature dict (12 features total)
         features = {
             'rain_lag_7': float(rain_lag_7),
             'rain_lag_30': float(rain_lag_30),
             'rolling_30_rain': float(rolling_30_rain),
+            'rolling_60_rain': float(rolling_60_rain),  # NEW
+            'rolling_90_rain': float(rolling_90_rain),  # NEW
+            'dry_days_count': int(dry_days_count),      # NEW
+            'rain_deficit': float(rain_deficit),        # NEW
             'temp': float(latest_weather['temp']),
             'humidity': float(latest_weather['humidity']),
             'wind': float(latest_weather['wind']),

@@ -3,6 +3,10 @@
         "rain_lag_7",
         "rain_lag_30",
         "rolling_30_rain",
+        "rolling_60_rain",
+        "rolling_90_rain",
+        "dry_days_count",
+        "rain_deficit",
         "temp",
         "humidity",
         "wind",
@@ -12,5 +16,5 @@
     "target_regression": "target_monthly_rain",
     "target_classification": "target_category",
     "model_type": "RandomForest",
-    "version": "v1"
+    "version": "v2"
 }

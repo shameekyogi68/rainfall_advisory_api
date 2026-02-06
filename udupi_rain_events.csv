@@ -1,0 +1,13 @@
+date,event_type,description,source,expected_prediction
+2016-06-15,drought,Drought pattern noted in Revised Drought Memorandum for Kharif-2016,ksdma.karnataka.gov.in,Deficit
+2017-05-06,drought,Acute water scarcity in Udupi; water rationing directed,Mangalore Today,Deficit
+2019-08-06,flood,Severe heavy rainfall: ~150.4mm in 24hrs with flooding and evacuations,Deccan Herald,Excess
+2019-08-07,flood,Very heavy to extreme rainfall forecast; significant damage reported,Business Today,Excess
+2019-08-08,flood,Continued extreme rainfall alerts for Udupi district,Business Today,Excess
+2019-08-09,flood,Flooding episodes continued across coastal districts,Business Today,Excess
+2019-10-15,flood,Karnataka flood episodes affecting coastal areas including Udupi,floodlist.com,Excess
+2023-07-26,alert,IMD heavy-rain alert; district holidays declared as precaution,The Canara Post,Excess
+2023-07-27,alert,Heavy rain alert continuation for Coastal Karnataka,The Canara Post,Excess
+2023-09-23,alert,IMD heavy rains/yellow alert for coastal districts including Udupi,Mangalore Today,Normal/Excess
+2024-05-17,drought,Karkala Hebri Brahmavar declared drought-hit; crop compensation announced,Daijiworld,Deficit
+2025-05-26,flood,Heavy pre-monsoon rainfall with localized flooding and evacuations,Times of India,Excess

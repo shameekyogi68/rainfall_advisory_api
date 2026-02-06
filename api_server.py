@@ -73,8 +73,8 @@ class AdvisoryRequest(BaseModel):
             diff = (dt - today).days
             if diff > 30:
                 raise ValueError('Date cannot be more than 30 days in future')
-            if diff < -365:
-                raise ValueError('Date cannot be more than 1 year in past')
+            if diff < -3650:  # Extended to 10 years for historical validation
+                raise ValueError('Date cannot be more than 10 years in past')
             return v
         except ValueError as e:
             raise ValueError(f'Invalid date format. Use YYYY-MM-DD. Error: {str(e)}')
