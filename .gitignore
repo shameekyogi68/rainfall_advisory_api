@@ -1,0 +1,62 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv
+.env
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*.swn
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# Monitoring data (created at runtime)
+monitoring/
+
+# Test coverage
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Temporary files
+*.tmp
+*.bak
+*~
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+
+# Large data directories (NetCDF files and raw data)
+# These are too large for GitHub - download separately or generate locally
+DCS/
+Nasa Power/
+chirps/
+taluk_csv/
+taluk_daily_csv/
+
+# NetCDF files
+*.nc
