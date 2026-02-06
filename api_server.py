@@ -284,13 +284,19 @@ async def get_advisory(request: Request, advisory_request: AdvisoryRequest):
         from performance_tracker import get_performance_tracker
         tracker = get_performance_tracker()
         
+        # Handle both old and new response formats
+        taluk_name = result['location'].get('taluk', result['location'].get('area', 'Unknown'))
+        main_prediction = result.get('prediction', {}).get('month_status') or result.get('rainfall', {}).get('monthly_prediction', {}).get('category', 'Unknown')
+        confidence = result.get('prediction', {}).get('confidence', {})
+        alert_shown = result.get('alert', {}).get('show_alert', False) or result.get('main_status', {}).get('priority') in ['WARNING', 'URGENT']
+        
         tracker.log_prediction(
             user_id=advisory_request.user_id,
-            taluk=result['location']['taluk'],
+            taluk=taluk_name,
             features={},  # Would include actual features in production
-            prediction=result['prediction']['month_status'],
-            confidence=result['prediction']['confidence'],
-            alert_sent=result['alert']['show_alert']
+            prediction=main_prediction,
+            confidence=confidence,
+            alert_sent=alert_shown
         )
         
         # Log prediction for audit
@@ -298,15 +304,15 @@ async def get_advisory(request: Request, advisory_request: AdvisoryRequest):
             "timestamp": datetime.now().isoformat(),
             "user_id": advisory_request.user_id,
             "gps": f"{advisory_request.gps_lat},{advisory_request.gps_long}",
-            "taluk": result['location']['taluk'],
-            "prediction": result['prediction']['month_status'],
-            "alert_sent": result['alert']['show_alert'],
-            "alert_level": result['alert']['level'],
+            "taluk": taluk_name,
+            "prediction": main_prediction,
+            "alert_sent": alert_shown,
+            "alert_level": result.get('alert', {}).get('level', result.get('main_status', {}).get('priority', 'UNKNOWN')),
             "processing_time_ms": (datetime.now() - start_time).total_seconds() * 1000
         }
         prediction_logger.info(json.dumps(prediction_log_entry))
         
-        logger.info(f"Advisory complete for {advisory_request.user_id}: {result['prediction']['month_status']}")
+        logger.info(f"Advisory complete for {advisory_request.user_id}: {main_prediction}")
         
         return result
         

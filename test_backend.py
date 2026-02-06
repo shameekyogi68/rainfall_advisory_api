@@ -134,20 +134,21 @@ def test_get_advisory_success():
     assert response.status_code == 200
     data = response.json()
     
-    # Check response structure
+    # Check response structure (new farmer-friendly format)
     assert data["status"] == "success"
     assert "location" in data
-    assert "prediction" in data
-    assert "alert" in data
-    assert "weather_summary" in data
+    assert "main_status" in data
+    assert "rainfall" in data
+    assert "what_to_do" in data
     
-    # Check location
-    assert data["location"]["taluk"] == "Udupi"
-    assert data["location"]["district"] == "Udupi"
+    # Check location (new format uses 'area' instead of 'taluk')
+    assert data["location"]["area"] == "Udupi"
+    assert "district" in data["location"]
     
-    # Check prediction
-    assert data["prediction"]["month_status"] in ['Deficit', 'Normal', 'Excess']
-    assert "confidence" in data["prediction"]
+    # Check rainfall prediction
+    assert "monthly_prediction" in data["rainfall"]
+    assert data["rainfall"]["monthly_prediction"]["category"] in ['Deficit', 'Normal', 'Excess']
+    assert "confidence_percent" in data["rainfall"]["monthly_prediction"]
 
 def test_get_advisory_invalid_gps():
     """Test advisory with out-of-bounds GPS"""
