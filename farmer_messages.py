@@ -72,6 +72,12 @@ FARMER_MESSAGES = {
             "icon": "🚨",
             "color": "#FF5722"
         },
+        "urgent": {
+            "en": "URGENT ACTION",
+            "kn": "ತುರ್ತು ಕ್ರಮ",
+            "icon": "🔴",
+            "color": "#D32F2F"
+        },
         "danger": {
             "en": "URGENT ACTION",
             "kn": "ತುರ್ತು ಕ್ರಮ",
