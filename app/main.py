@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, field_validator
 from datetime import datetime
@@ -133,6 +134,9 @@ app = FastAPI(
     debug=DEBUG,
     lifespan=lifespan
 )
+
+# Add Gzip compression for faster responses
+app.add_middleware(GZipMiddleware, minimum_size=500)  # Compress responses > 500 bytes
 
 # ... (middleware/handlers remain same) ...
 

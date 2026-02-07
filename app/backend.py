@@ -113,9 +113,25 @@ class TalukMapper:
 
 # ==================== B2: FEATURE ENGINEERING ====================
 class FeatureEngineer:
-    def __init__(self, db_url=None):
-        self.use_db = False
-        self.engine = None
+    _instance = None
+    _use_db = False
+    _engine = None
+    _rainfall_df = None
+    _weather_df = None
+    _schema = None
+    
+    def __new__(cls, db_url=None):
+        """Singleton pattern: only create one instance"""
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+            cls._load_data(db_url)
+        return cls._instance
+    
+    @classmethod
+    def _load_data(cls, db_url=None):
+        """Load data once and cache in memory"""
+        if cls._rainfall_df is not None or cls._use_db:
+            return  # Already loaded
         
         # Try Database Connection first
         import getpass
@@ -124,23 +140,24 @@ class FeatureEngineer:
         if db_url:
             try:
                 from sqlalchemy import create_engine, text
-                self.engine = create_engine(db_url)
+                cls._engine = create_engine(db_url)
                 # Test connection
-                with self.engine.connect() as conn:
+                with cls._engine.connect() as conn:
                     conn.execute(text("SELECT 1"))
-                self.use_db = True
+                cls._use_db = True
                 logger.info("✅ FeatureEngineer connected to Database")
             except Exception as e:
                 logger.warning(f"⚠️ Database connection failed: {e}. Falling back to CSVs.")
         
         # Fallback to CSVs
-        if not self.use_db:
+        if not cls._use_db:
             try:
-                self.rainfall_df = pd.read_csv(RAINFALL_HISTORICAL)
-                self.rainfall_df['date'] = pd.to_datetime(self.rainfall_df['date'], format='mixed')
-                self.weather_df = pd.read_csv(WEATHER_DRIVERS)
-                self.weather_df['date'] = pd.to_datetime(self.weather_df['date'], format='mixed')
-                logger.info("✅ FeatureEngineer loaded CSV data")
+                logger.info("Loading CSV data (first time)...")
+                cls._rainfall_df = pd.read_csv(RAINFALL_HISTORICAL)
+                cls._rainfall_df['date'] = pd.to_datetime(cls._rainfall_df['date'], format='mixed')
+                cls._weather_df = pd.read_csv(WEATHER_DRIVERS)
+                cls._weather_df['date'] = pd.to_datetime(cls._weather_df['date'], format='mixed')
+                logger.info("✅ FeatureEngineer loaded and cached CSV data")
             except FileNotFoundError as e:
                 raise RuntimeError(f"Required data file not found: {e.filename}")
             except Exception as e:
@@ -148,9 +165,29 @@ class FeatureEngineer:
             
         try:
             with open(FEATURE_SCHEMA, 'r') as f:
-                self.schema = json.load(f)
+                cls._schema = json.load(f)
         except Exception as e:
             raise RuntimeError(f"Error loading schema: {str(e)}")
+    
+    @property
+    def use_db(self):
+        return self._use_db
+    
+    @property
+    def engine(self):
+        return self._engine
+    
+    @property
+    def rainfall_df(self):
+        return self._rainfall_df
+    
+    @property
+    def weather_df(self):
+        return self._weather_df
+    
+    @property
+    def schema(self):
+        return self._schema
 
     def _get_rainfall_data(self, taluk, ref_dt):
         """Fetch rainfall data (historical) for feature computation"""
