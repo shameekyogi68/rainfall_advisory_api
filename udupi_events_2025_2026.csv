@@ -1,0 +1,8 @@
+date_start,date_end,event_type,description,expected_prediction,source
+2025-05-24,2025-05-30,heavy_rain,Multi-day heavy rain and alert window with continuous rainfall,Excess,IMD press release / regional news
+2025-05-26,2025-05-27,flood,Continuous heavy rains with red/orange alerts and local flooding,Excess,Regional news / IMD alerts
+2025-05-29,2025-05-29,heavy_rain,Station 24-hour spike: 77.5mm recorded in 24hrs,Excess,ReliefWeb situation report
+2025-05-27,2025-05-27,flood,Station peak at Handadi GP Bramhavar taluk: ~271mm,Excess,Times of India station report
+2025-07-15,2025-07-15,excess_seasonal,Mid-July YTD: 2803mm (~43% above normal) seasonal anomaly,Excess,Times of India July summary
+2025-12-15,2025-12-15,dry_period,Typical dry/post-monsoon window for negative testing,Deficit,Udupi climatology
+2026-01-15,2026-02-06,dry_period,Early 2026: 3.1mm actual vs 1.5mm normal (Jan 1 - Feb 6),Deficit,IMD districtwise PDF

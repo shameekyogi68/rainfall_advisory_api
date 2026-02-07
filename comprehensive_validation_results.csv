@@ -1,0 +1,13 @@
+date,event_type,expected,prediction,confidence,match,testable
+2023-07-26,alert,Excess,Excess,88,True,True
+2023-07-27,alert,Excess,Excess,78,True,True
+2023-09-23,alert,Normal/Excess,Normal,62,True,True
+2024-05-17,drought,Deficit,Normal,75,False,True
+2025-05-26,flood,Excess,Excess,80,True,True
+2025-05-30,heavy_rain,Excess,Excess,81,True,True
+2025-05-27,flood,Excess,Excess,73,True,True
+2025-05-29,heavy_rain,Excess,Excess,70,True,True
+2025-05-27,flood,Excess,Excess,73,True,True
+2025-07-15,excess_seasonal,Excess,Excess,51,True,True
+2025-12-15,dry_period,Deficit,Normal,43,False,True
+2026-02-06,dry_period,Deficit,Deficit,61,True,True

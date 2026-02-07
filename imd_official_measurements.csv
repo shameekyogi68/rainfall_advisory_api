@@ -1,0 +1,6 @@
+date,event_type,imd_measurement,expected_prediction,source,note
+2026-01-01,dry_period,3.1mm cumulative (Jan 1 - Feb 6) vs 1.5mm normal (105%),Normal,IMD districtwise PDF 06-Feb-2026,Slightly above short-term normal for dry season period
+2025-05-29,heavy_rain,77.5mm in 24 hours,Excess,IMD daily measurement / ReliefWeb,Official 24-hour rainfall measurement - heavy rain event
+2025-05-27,flood,Handadi-GP station 200+mm localized,Excess,IMD station report / Times of India,Station peak during late May monsoon activity
+2025-05-24,heavy_rain,Multi-day event 24-30 May with significant accumulation,Excess,IMD press release / regional reports,Unusually high early monsoon rainfall
+2025-07-15,excess_seasonal,3700+mm YTD (35% above normal),Excess,IMD cumulative report mid-July,Strong wet monsoon season - significantly above normal
