@@ -34,6 +34,8 @@ logs/
 
 # Monitoring data (created at runtime)
 /monitoring/
+app/monitoring/*.json
+app/monitoring/*.jsonl
 
 # Test coverage
 .coverage
