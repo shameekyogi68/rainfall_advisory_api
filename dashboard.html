@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rainfall Prediction Dashboard - Udupi</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transition: transform 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .card-title {
+            font-size: 0.9rem;
+            color: #666;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+        
+        .card-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .card-subtitle {
+            font-size: 0.9rem;
+            color: #888;
+        }
+        
+        .prediction-card {
+            grid-column: span 2;
+        }
+        
+        .prediction-value {
+            display: inline-block;
+            padding: 20px 40px;
+            border-radius: 10px;
+            font-size: 3rem;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+        
+        .deficit { background: #fee; color: #c00; }
+        .normal { background: #efe; color: #060; }
+        .excess { background: #eef; color: #00c; }
+        
+        .confidence-bar {
+            width: 100%;
+            height: 30px;
+            background: #eee;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+        
+        .confidence-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50, #8BC34A);
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .stat-box {
+            text-align: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .stat-label {
+            font-size: 0.85rem;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .chart-card {
+            grid-column: span 2;
+        }
+        
+        #accuracyChart {
+            width: 100%;
+            height: 300px;
+        }
+        
+        .refresh-btn {
+            background: white;
+            color: #667eea;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .refresh-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+        
+        .last-updated {
+            text-align: center;
+            color: white;
+            opacity: 0.8;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌧️ Rainfall Prediction Dashboard</h1>
+            <p>Udupi District | AI-Powered Weather Intelligence</p>
+        </div>
+        
+        <div class="dashboard">
+            <!-- Current Prediction -->
+            <div class="card prediction-card">
+                <div class="card-title">Current Month Prediction</div>
+                <div>
+                    <span class="prediction-value normal" id="prediction">Normal</span>
+                </div>
+                <div class="confidence-bar">
+                    <div class="confidence-fill" id="confidenceBar" style="width: 75%">
+                        <span id="confidence">75%</span> Confidence
+                    </div>
+                </div>
+                <div class="card-subtitle" id="predictionDate">For February 2026</div>
+            </div>
+            
+            <!-- Model Accuracy -->
+            <div class="card">
+                <div class="card-title">Model Accuracy</div>
+                <div class="card-value" style="color: #4CAF50;">88.2%</div>
+                <div class="card-subtitle">15/17 events correct</div>
+            </div>
+            
+            <!-- Safety Record -->
+            <div class="card">
+                <div class="card-title">Safety Events</div>
+                <div class="card-value" style="color: #2196F3;">100%</div>
+                <div class="card-subtitle">9/9 floods detected</div>
+            </div>
+            
+            <!-- IMD Validation -->
+            <div class="card">
+                <div class="card-title">IMD Validation</div>
+                <div class="card-value" style="color: #FF9800;">100%</div>
+                <div class="card-subtitle">4/4 official measurements</div>
+            </div>
+            
+            <!-- Pattern Alignment -->
+            <div class="card">
+                <div class="card-title">Pattern Alignment</div>
+                <div class="card-value" style="color: #9C27B0;">100%</div>
+                <div class="card-subtitle">1/1 climatology tests</div>
+            </div>
+            
+            <!-- Statistics Grid -->
+            <div class="card" style="grid-column: span 2;">
+                <div class="card-title">Performance Breakdown</div>
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <div class="stat-number">3/3</div>
+                        <div class="stat-label">Floods</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-number">2/2</div>
+                        <div class="stat-label">Heavy Rain</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-number">3/3</div>
+                        <div class="stat-label">Alerts</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-number">1/2</div>
+                        <div class="stat-label">Dry Periods</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-number">0</div>
+                        <div class="stat-label">False Alarms</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-number">15.4K</div>
+                        <div class="stat-label">Training Samples</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div style="text-align: center;">
+            <button class="refresh-btn" onclick="refreshData()">🔄 Refresh Prediction</button>
+        </div>
+        
+        <div class="last-updated" id="lastUpdated">
+            Last updated: <span id="updateTime">...</span>
+        </div>
+    </div>
+    
+    <script>
+        // Update current prediction
+        async function refreshData() {
+            const updateTime = document.getElementById('updateTime');
+            const prediction = document.getElementById('prediction');
+            const confidence = document.getElementById('confidence');
+            const confidenceBar = document.getElementById('confidenceBar');
+            const predictionDate = document.getElementById('predictionDate');
+            
+            updateTime.textContent = 'Loading...';
+            
+            try {
+                // Get current date
+                const now = new Date();
+                const dateStr = now.toISOString().split('T')[0];
+                const monthName = now.toLocaleString('default', { month: 'long', year: 'numeric' });
+                
+                // Call API
+                const response = await fetch(`http://localhost:5000/predict?lat=13.3409&lon=74.7421&date=${dateStr}`);
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    const pred = data.rainfall.monthly_prediction.category;
+                    const conf = data.rainfall.monthly_prediction.confidence_percent;
+                    
+                    // Update prediction
+                    prediction.textContent = pred;
+                    prediction.className = 'prediction-value ' + pred.toLowerCase();
+                    
+                    // Update confidence
+                    confidence.textContent = conf + '%';
+                    confidenceBar.style.width = conf + '%';
+                    
+                    // Update date
+                    predictionDate.textContent = `For ${monthName}`;
+                    
+                    // Update timestamp
+                    updateTime.textContent = now.toLocaleString();
+                } else {
+                    alert('Error fetching prediction: ' + (data.error?.message?.en || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                updateTime.textContent = 'Error loading data';
+                alert('Failed to connect to API. Make sure the server is running on localhost:5000');
+            }
+        }
+        
+        // Initial load
+        window.addEventListener('load', () => {
+            refreshData();
+        });
+        
+        // Auto-refresh every 5 minutes
+        setInterval(refreshData, 5 * 60 * 1000);
+    </script>
+</body>
+</html>
