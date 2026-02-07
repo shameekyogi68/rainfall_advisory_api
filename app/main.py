@@ -206,12 +206,12 @@ def get_metrics():
             total_predictions = 0
         
         # Get drift summary
-        from app.monitoring.drift import get_drift_detector
+        from .monitoring.drift import get_drift_detector
         drift_detector = get_drift_detector()
         drift_summary = drift_detector.get_drift_summary(last_n_hours=24)
         
         # Get performance metrics
-        from app.monitoring.quality import get_performance_tracker
+        from .monitoring.quality import get_performance_tracker
         tracker = get_performance_tracker()
         perf_metrics = tracker.get_latest_metrics()
         
@@ -231,7 +231,7 @@ def get_drift_status():
     """
     Dedicated drift monitoring endpoint
     """
-    from app.monitoring.drift import get_drift_detector
+    from .monitoring.drift import get_drift_detector
     drift_detector = get_drift_detector()
     return drift_detector.get_drift_summary(last_n_hours=168)  # 7 days
 
@@ -240,7 +240,7 @@ def get_performance_stats():
     """
     Dedicated performance metrics endpoint
     """
-    from app.monitoring.quality import get_performance_tracker
+    from .monitoring.quality import get_performance_tracker
     tracker = get_performance_tracker()
     return {
         "metrics": tracker.get_latest_metrics(),
@@ -290,11 +290,11 @@ async def get_advisory(request: Request, advisory_request: AdvisoryRequest):
         
         # ... (rest of logging logic same) ...
         # DRIFT DETECTION: Check if inputs are unusual
-        from app.monitoring.drift import get_drift_detector
+        from .monitoring.drift import get_drift_detector
         drift_detector = get_drift_detector()
         
         # PERFORMANCE TRACKING: Log prediction
-        from app.monitoring.quality import get_performance_tracker
+        from .monitoring.quality import get_performance_tracker
         tracker = get_performance_tracker()
         
         # Handle both old and new response formats
