@@ -12,6 +12,7 @@ import os
 from pathlib import Path
 
 from production_backend import process_advisory_request
+from farmer_advisory import FarmerAdvisory
 
 # ==================== LOGGING SETUP ====================
 # Create logs directory
@@ -342,6 +343,64 @@ async def shutdown_event():
     logger.info("🛑 Rainfall Advisory API Shutting Down")
 
 # ==================== RUN SERVER ====================
+
+
+@app.post("/get-enhanced-advisory", response_model=dict)
+@limiter.limit("60/minute")
+async def get_enhanced_advisory(request: Request, advisory_req: AdvisoryRequest):
+    """
+    Enhanced Farmer Advisory with:
+    - 7-day weather forecast
+    - Actionable recommendations  
+    - Crop-specific advice
+    - Risk levels
+    """
+    try:
+        # Get basic prediction
+        result = process_advisory_request(
+            request_id=f"enhanced_{datetime.now().timestamp()}",
+            lat=advisory_req.latitude,
+            lon=advisory_req.longitude,
+            date_str=advisory_req.date
+        )
+        
+        if result['status'] != 'success':
+            raise HTTPException(status_code=400, detail=result.get('error', 'Prediction failed'))
+        
+        # Generate enhanced advisory
+        advisor = FarmerAdvisory()
+        enhanced = advisor.generate_complete_advisory(
+            result,
+            lat=advisory_req.latitude,
+            lon=advisory_req.longitude,
+            crops=['paddy', 'coconut', 'vegetables']  # Default Udupi crops
+        )
+        
+        # Combine with original prediction
+        enhanced_result = {
+            **result,
+            'enhanced_advisory': enhanced,
+            'api_version': '1.2'
+        }
+        
+        # Log enhanced request
+        prediction_logger.info(json.dumps({
+            "timestamp": datetime.now().isoformat(),
+            "type": "enhanced_advisory",
+            "location": {"lat": advisory_req.latitude, "lon": advisory_req.longitude},
+            "prediction": result['rainfall']['monthly_prediction']['category'],
+            "confidence": result['rainfall']['monthly_prediction']['confidence_percent']
+        }))
+        
+        return enhanced_result
+        
+    except  HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Enhanced advisory error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to generate advisory: {str(e)}")
+
+
 if __name__ == "__main__":
     import uvicorn
     
