@@ -27,7 +27,8 @@ def generate_alert(ml_category, ml_rainfall_mm, live_forecast_7day_mm):
         alert["whatsapp_text"] = "🚨 *FLOOD WARNING*\n\nHeavy rain (>100mm) predicted for next 7 days.\n\n*Action Required:*\n- Clear drainage channels\n- Delay fertilizer application\n- Secure equipment"
         return alert
 
-    if live_forecast_7day_mm > 60.0 and (ml_category == "Excess" or ml_category == "Normal"):
+    if live_forecast_7day_mm > 60.0:
+        # CONFLICT RESOLUTION: Even if ML says "Drought" or "Normal", 60mm+ is wet.
         alert["severity"] = "HIGH"
         alert["type"] = "FLOOD"
         alert["sms_text"] = "WARNING: Heavy rain (~60mm+) expected. Soil saturation likely. Avoid spraying."
@@ -63,12 +64,18 @@ def generate_alert(ml_category, ml_rainfall_mm, live_forecast_7day_mm):
 
     # 3. NORMAL / EXCESS (Non-Critical)
     if ml_category == "Excess" and live_forecast_7day_mm <= 60.0:
+         # FALSE ALARM CHECK: ML says Excess but forecast is normal.
+         # Downgrade to Normal/Wet context
          alert["severity"] = "LOW"
          alert["type"] = "WET_NORMAL"
-         alert["sms_text"] = "STATUS: Good rains expected. Soil moisture healthy. Normal operations."
-         alert["whatsapp_text"] = "🟢 *GOOD RAINFALL*\n\nConsistent rains expected. Soil moisture is healthy.\n\n*Action:*\n- Continue normal operations\n- Watch for fungal issues if cloudy"
+         alert["sms_text"] = "STATUS: Moderate rains expected. Soil moisture healthy."
+         alert["whatsapp_text"] = "🟢 *GOOD RAINFALL*\n\nConsistent rains expected. Soil moisture is healthy.\n\n*Action:*\n- Continue normal operations"
          return alert
 
+    # 4. DATA GAP / UNKNOWN HANDLING
+    # If inputs look suspicious (e.g. exactly 0.0 forecast in monsoon could be error, but 0.0 is valid in winter)
+    # We rely on the caller to handle nulls, but here we assume valid floats.
+    
     # Default Normal
     alert["severity"] = "LOW"
     alert["type"] = "NORMAL"

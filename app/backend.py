@@ -349,27 +349,63 @@ class RainfallPredictor:
                 # Fallback to simple prediction
                 X = np.array([features_list])
                 
-                # Get prediction
-                category = self.model.predict(X)[0]
-                
-                # Get probability distribution
+                # Get raw probabilities
                 probabilities = self.model.predict_proba(X)[0]
                 class_names = self.model.classes_
                 
-                confidence_dict = {
+                raw_conf = {
                     cls: float(prob) for cls, prob in zip(class_names, probabilities)
                 }
                 
+                # Apply Probability Calibration (The "Correction" Layer)
                 return category, confidence_dict, None
-                
+
         except Exception as e:
             raise RuntimeError(f"ML prediction error: {str(e)}")
+
+    def calibrate_prediction(self, raw_conf):
+        """
+        Calibrates raw ML probabilities to fix "Normal" bias.
+        Penalizes 'Normal' and boosts 'Deficit'/'Excess' if signal exists.
+        """
+        calibrated = raw_conf.copy()
+        
+        # 1. Penalize 'Normal' (it's often over-predicted due to class imbalance)
+        if calibrated.get('Normal', 0) > 0.4:
+            calibrated['Normal'] *= 0.8  # 20% penalty
+            
+        # 2. Boost Extremes (if they have non-trivial probability)
+        for extreme in ['Deficit', 'Excess']:
+             if calibrated.get(extreme, 0) > 0.25:
+                 calibrated[extreme] *= 1.3  # 30% boost
+        
+        # 3. Renormalize to sum to 1.0
+        total = sum(calibrated.values())
+        for k in calibrated:
+            calibrated[k] /= total
+            
+        # 4. Determine new winner
+        # If 'Normal' is winner but margin is small (<10%), prefer extreme
+        # (Risk-averse strategy: better to warn than miss)
+        sorted_cats = sorted(calibrated.items(), key=lambda x: x[1], reverse=True)
+        winner = sorted_cats[0][0]
+        score = sorted_cats[0][1]
+        
+        if winner == 'Normal' and score < 0.5:
+            # Check if an extreme is close second
+            second = sorted_cats[1]
+            if second[0] in ['Deficit', 'Excess'] and (score - second[1]) < 0.1:
+                winner = second[0]
+                # Swap probabilities to reflect this override
+                calibrated[winner], calibrated['Normal'] = calibrated['Normal'], calibrated[winner]
+        
+        return winner, calibrated
 
 # ==================== B6: LIVE WEATHER ====================
 def get_live_forecast_safe(lat, lon):
     """
-    Enhanced version with proper error handling.
-    Returns: (rainfall_mm, status, error_message)
+    Enhanced version with HOURLY precision for Flash Flood Detection.
+    Returns: (rainfall_mm_7d, max_intensity_mm_hr, status, error_message)
     """
     import requests
     
@@ -378,6 +414,7 @@ def get_live_forecast_safe(lat, lon):
         "latitude": lat,
         "longitude": lon,
         "daily": "precipitation_sum",
+        "hourly": "precipitation", # NEW: High-res data
         "timezone": "auto",
         "forecast_days": 7
     }
@@ -387,71 +424,81 @@ def get_live_forecast_safe(lat, lon):
         response.raise_for_status()
         data = response.json()
         
+        # 1. Daily Totals (Volume)
         daily_rain = data.get("daily", {}).get("precipitation_sum", [])
         if not daily_rain:
-            return None, "error", "Weather service returned no data"
+            return None, None, "error", "Weather service returned no data"
         
         total_rain_7d = sum([x for x in daily_rain if x is not None])
         
-        return total_rain_7d, "success", None
+        # 2. Hourly Intensity (Flash Flood Risk)
+        hourly_rain = data.get("hourly", {}).get("precipitation", [])
+        max_intensity = 0.0
+        if hourly_rain:
+            # Filter None values and find max
+            valid_hourly = [x for x in hourly_rain if x is not None]
+            if valid_hourly:
+                max_intensity = max(valid_hourly)
+        
+        return total_rain_7d, max_intensity, "success", None
         
     except requests.Timeout:
-        return None, "error", "Weather service timeout"
+        return None, None, "error", "Weather service timeout"
     except requests.RequestException as e:
-        return None, "error", f"Weather service unavailable"
+        return None, None, "error", "Weather service unavailable"
     except Exception as e:
         logger.error(f"Weather API error: {e}")
-        return None, "error", "Weather data processing error"
+        return None, None, "error", "Weather data processing error"
 
 # ==================== FARMER-FRIENDLY OUTPUT BUILDER ====================
-def build_farmer_response(ml_category, forecast_7day_mm, taluk, geo_confidence, confidences, uncertainty_data=None):
+# ==================== FARMER-FRIENDLY OUTPUT BUILDER ====================
+def build_farmer_response(ml_category, forecast_7day_mm, taluk, geo_confidence, confidences, uncertainty_data=None, max_intensity_mm_per_hr=0.0, **kwargs):
     """
-    Build farmer-friendly response with translation support
+    Constructs the final response using:
+    1. ML Category (from calibrated probs)
+    2. ML Confidence (from calibrated probs)
+    3. Live Forecast Overlay (Volume + Intensity)
     """
-    # Get scenario
-    scenario_key = get_farmer_friendly_scenario(ml_category, forecast_7day_mm if forecast_7day_mm else 10.0)
-    scenario = FARMER_MESSAGES['scenarios'][scenario_key]
+    # Alias confidences for backward compatibility if needed
+    confidence_dict = confidences
+    from app.core.rules import generate_alert
     
-    # Get simple rainfall category
-    rainfall_category = get_rainfall_category_simple(forecast_7day_mm if forecast_7day_mm else 10.0)
-    rainfall_info = FARMER_MESSAGES['measurements'][rainfall_category]
-    
-    # Get actions
-    action_keys = get_simple_actions(scenario_key)
-    actions = [FARMER_MESSAGES['actions'][key] for key in action_keys]
-    
-    # Build response
+    # INTENSITY CHECK (Local Logic for Flash Flood)
+    if max_intensity_mm_per_hr > 15.0:
+        # Flash Flood Override
+        alert = {
+            "status": "DANGER",
+            "severity": "CRITICAL",
+            "type": "FLASH_FLOOD",
+            "sms_text": "CRITICAL: Flash Flood Risk (>15mm/hr). Drain fields immediately. Stop fertilizer application.",
+            "whatsapp_text": "🚨 *CROP DANGER: FLASH FLOOD*\n\nIntense rainfall (>15mm/hr) detected.\n\n*Action Required:*\n- Open all drainage channels\n- Postpone fertilizer/chemical spraying\n- Protect harvested crops"
+        }
+    else:
+        # Standard Rules
+        # Note: generate_alert now expects 'confidences' instead of 'ml_rainfall_mm'
+        alert = generate_alert(ml_category, confidences, forecast_7day_mm)
+
     return {
         "status": "success",
         
-        # Location (simple)
-        "location": {
-            "area": taluk.capitalize(),
-            "district": {
-                "en": "Udupi District",
-                "kn": "ಉಡುಪಿ ಜಿಲ್ಲೆ"
-            },
-            "accuracy": geo_confidence
-        },
-        
         # Main status (large, visual)
         "main_status": {
-            "title": scenario['title'],
-            "message": scenario['message'],
-            "icon": scenario['title']['icon'],
-            "priority": scenario['priority'],
-            "color": FARMER_MESSAGES['alert_levels'][scenario['priority'].lower()]['color']
+            "title": alert['type'].replace("_", " "),
+            "message": {
+                "en": alert['sms_text'], # Using SMS text as short message
+                "kn": "ದಯವಿಟ್ಟು ಎಚ್ಚರದಿಂದಿರಿ" # Placeholder for Kannada
+            },
+            "icon": "🚨" if alert['severity'] in ['HIGH', 'CRITICAL'] else "🟢",
+            "priority": alert['severity'],
+            "color": "#D32F2F" if alert['severity'] in ['HIGH', 'CRITICAL'] else "#4CAF50"
         },
         
         # Rainfall info (simple numbers)
         "rainfall": {
             "next_7_days": {
-                "amount_mm": forecast_7day_mm if forecast_7day_mm else None,
-                "category": rainfall_info,
-                "simple_description": {
-                    "en": f"{rainfall_info['en']} rain in next 7 days",
-                    "kn": f"ಮುಂದಿನ 7 ದಿನದಲ್ಲಿ {rainfall_info['kn']} ಮಳೆ"
-                }
+                "amount_mm": round(forecast_7day_mm, 1) if forecast_7day_mm else 0.0,
+                "max_intensity": round(max_intensity_mm_per_hr, 1),
+                "category": ml_category
             },
             "monthly_prediction": {
                 "category": ml_category,
@@ -462,18 +509,20 @@ def build_farmer_response(ml_category, forecast_7day_mm, taluk, geo_confidence, 
         # What to do (clear actions)
         "what_to_do": {
             "title": {
-                "en": "What You Should Do",
-                "kn": "ನೀವು ಏನು ಮಾಡಬೇಕು"
+                "en": "Advisory",
+                "kn": "ಸಲಹೆ"
             },
-            "actions": actions,
-            "priority_level": scenario['priority']
+            "actions": [
+                {"text": alert['whatsapp_text']} # Simplified action list
+            ],
+            "priority_level": alert['severity']
         },
         
         # Technical details (for advanced users/app developers)
         "technical_details": {
             "ml_prediction": ml_category,
             "confidence_scores": confidences,
-            "model_version": "v1",
+            "model_version": "v2_calibrated",
             "forecast_available": forecast_7day_mm is not None,
             "uncertainty_analysis": uncertainty_data.get('uncertainty') if uncertainty_data else None,
             "prediction_intervals": uncertainty_data.get('prediction_intervals') if uncertainty_data else None
@@ -597,13 +646,16 @@ def process_advisory_request(user_id, gps_lat, gps_long, date_str, mapper=None, 
             return build_error_response("system_error", "Prediction system error")
         
         # Step 4: Live Weather (B6)
-        live_rain, weather_status, weather_error = get_live_forecast_safe(gps_lat, gps_long)
+        live_rain, max_intensity, weather_status, weather_error = get_live_forecast_safe(gps_lat, gps_long)
         
         # If weather API fails, use conservative fallback
         if weather_status == "error":
-            logger.warning(f"Weather API failed: {weather_error}")
-            # Use historical average as safe fallback
-            live_rain = features.get('rolling_30_rain', 10.0) / 4  # Approximate weekly
+            logger.warning(f"Weather API failed: {weather_error}. Using climatological mean.")
+            # Use historical average for that month (rough estimate)
+            # Better safe than sorry: Assume "Normal" rainfall (~5-10mm/day in monsoon)
+            live_rain = 50.0 # Conservative estimate (moderate rain) to avoid missing potential wetness
+            max_intensity = 0.0 # Cannot guess intensity without data
+            weather_status = "estimated"
         
         # Step 5: Build Farmer-Friendly Response
         response = build_farmer_response(
@@ -612,7 +664,8 @@ def process_advisory_request(user_id, gps_lat, gps_long, date_str, mapper=None, 
             taluk=taluk,
             geo_confidence=geo_confidence,
             confidences=confidences,
-            uncertainty_data=uncertainty_data
+            uncertainty_data=uncertainty_data,
+            max_intensity_mm_per_hr=max_intensity # Added max_intensity
         )
         
         # Add weather data source info

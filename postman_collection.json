@@ -1,0 +1,97 @@
+{
+    "info": {
+        "name": "Rainfall Advisory API Tests",
+        "description": "Collection to test the Rainfall Advisory API endpoints including success scenarios, error handling, and field validation.",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "1. Get Advisory (Valid Udupi Location)",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"user_id\": \"test_farmer_1\",\n    \"gps_lat\": 13.3409,\n    \"gps_long\": 74.7421,\n    \"date\": \"2023-10-25\"\n}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/advisory",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "advisory"
+                    ]
+                },
+                "description": "Tests a valid location in Udupi district. Expects 200 OK and a full advisory."
+            },
+            "response": []
+        },
+        {
+            "name": "2. Get Advisory (Invalid Location - USA)",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"user_id\": \"test_farmer_2\",\n    \"gps_lat\": 37.7749,\n    \"gps_long\": -122.4194\n}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/advisory",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "advisory"
+                    ]
+                },
+                "description": "Tests a location outside Udupi. Expects a handled error response with 'gps_error'."
+            },
+            "response": []
+        },
+        {
+            "name": "3. Get Advisory (Missing Fields)",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"user_id\": \"test_farmer_3\"\n    // Missing lat/long\n}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/advisory",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "advisory"
+                    ]
+                },
+                "description": "Tests missing required fields. Expects 422 Unprocessable Entity."
+            },
+            "response": []
+        }
+    ],
+    "variable": [
+        {
+            "key": "base_url",
+            "value": "https://rainfall-advisory-api.onrender.com",
+            "type": "string"
+        }
+    ]
+}
