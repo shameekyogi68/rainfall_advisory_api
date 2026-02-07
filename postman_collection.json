@@ -1,90 +1,225 @@
 {
     "info": {
-        "name": "Rainfall Advisory API Tests",
-        "description": "Collection to test the Rainfall Advisory API endpoints including success scenarios, error handling, and field validation.",
+        "_postman_id": "rainfall-advisory-v2.1",
+        "name": "Rainfall Advisory API v1.2",
+        "description": "Comprehensive test collection for the Rainfall Advisory API. Includes endpoints for advisory generation, system health, and ML monitoring.",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
     },
     "item": [
         {
-            "name": "1. Get Advisory (Valid Udupi Location)",
-            "request": {
-                "method": "POST",
-                "header": [
-                    {
-                        "key": "Content-Type",
-                        "value": "application/json"
-                    }
-                ],
-                "body": {
-                    "mode": "raw",
-                    "raw": "{\n    \"user_id\": \"test_farmer_1\",\n    \"gps_lat\": 13.3409,\n    \"gps_long\": 74.7421,\n    \"date\": \"2023-10-25\"\n}"
+            "name": "General Status",
+            "item": [
+                {
+                    "name": "1. Root (API Info)",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                ""
+                            ]
+                        },
+                        "description": "Returns API metadata, version, and status."
+                    },
+                    "response": []
                 },
-                "url": {
-                    "raw": "{{base_url}}/advisory",
-                    "host": [
-                        "{{base_url}}"
-                    ],
-                    "path": [
-                        "advisory"
-                    ]
-                },
-                "description": "Tests a valid location in Udupi district. Expects 200 OK and a full advisory."
-            },
-            "response": []
+                {
+                    "name": "2. Health Check",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/health",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "health"
+                            ]
+                        },
+                        "description": "Checks critical system dependencies (files, models). Returns 200 OK if healthy."
+                    },
+                    "response": []
+                }
+            ]
         },
         {
-            "name": "2. Get Advisory (Invalid Location - USA)",
-            "request": {
-                "method": "POST",
-                "header": [
-                    {
-                        "key": "Content-Type",
-                        "value": "application/json"
-                    }
-                ],
-                "body": {
-                    "mode": "raw",
-                    "raw": "{\n    \"user_id\": \"test_farmer_2\",\n    \"gps_lat\": 37.7749,\n    \"gps_long\": -122.4194\n}"
+            "name": "Advisory Services",
+            "item": [
+                {
+                    "name": "3. Get Advisory (Valid Udupi Location)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"user_id\": \"test_farmer_1\",\n    \"gps_lat\": 13.3409,\n    \"gps_long\": 74.7421,\n    \"date\": \"2023-10-25\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/get-advisory",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "get-advisory"
+                            ]
+                        },
+                        "description": "Main endpoint. Returns rainfall prediction and advisory for a valid location in Udupi."
+                    },
+                    "response": []
                 },
-                "url": {
-                    "raw": "{{base_url}}/advisory",
-                    "host": [
-                        "{{base_url}}"
-                    ],
-                    "path": [
-                        "advisory"
-                    ]
+                {
+                    "name": "4. Get Enhanced Advisory (Valid)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"user_id\": \"test_farmer_vip\",\n    \"gps_lat\": 13.3409,\n    \"gps_long\": 74.7421,\n    \"date\": \"2023-10-25\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/get-enhanced-advisory",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "get-enhanced-advisory"
+                            ]
+                        },
+                        "description": "Returns advisory PLUS 7-day weather forecast and crop-specific advice."
+                    },
+                    "response": []
                 },
-                "description": "Tests a location outside Udupi. Expects a handled error response with 'gps_error'."
-            },
-            "response": []
+                {
+                    "name": "5. Error: Location Outside Udupi",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"user_id\": \"test_farmer_out\",\n    \"gps_lat\": 37.7749,\n    \"gps_long\": -122.4194,\n    \"date\": \"2023-10-25\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/get-advisory",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "get-advisory"
+                            ]
+                        },
+                        "description": "Tests validation logic. Expects 400 Bad Request with 'gps_error'."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "6. Error: Invalid Date Format",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"user_id\": \"test_farmer_date\",\n    \"gps_lat\": 13.3409,\n    \"gps_long\": 74.7421,\n    \"date\": \"25-10-2023\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/get-advisory",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "get-advisory"
+                            ]
+                        },
+                        "description": "Tests date validation. Expects 422 Unprocessable Entity."
+                    },
+                    "response": []
+                }
+            ]
         },
         {
-            "name": "3. Get Advisory (Missing Fields)",
-            "request": {
-                "method": "POST",
-                "header": [
-                    {
-                        "key": "Content-Type",
-                        "value": "application/json"
-                    }
-                ],
-                "body": {
-                    "mode": "raw",
-                    "raw": "{\n    \"user_id\": \"test_farmer_3\"\n    // Missing lat/long\n}"
+            "name": "Monitoring & ML Ops",
+            "item": [
+                {
+                    "name": "7. System Metrics",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/metrics",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "metrics"
+                            ]
+                        },
+                        "description": "Returns high-level system metrics including total predictions and drift summary."
+                    },
+                    "response": []
                 },
-                "url": {
-                    "raw": "{{base_url}}/advisory",
-                    "host": [
-                        "{{base_url}}"
-                    ],
-                    "path": [
-                        "advisory"
-                    ]
+                {
+                    "name": "8. Drift Status",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/monitoring/drift",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "monitoring",
+                                "drift"
+                            ]
+                        },
+                        "description": "Detailed report on data drift for inputs and outputs over the last 7 days."
+                    },
+                    "response": []
                 },
-                "description": "Tests missing required fields. Expects 422 Unprocessable Entity."
-            },
-            "response": []
+                {
+                    "name": "9. Performance Stats",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/monitoring/performance",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "monitoring",
+                                "performance"
+                            ]
+                        },
+                        "description": "Detailed ML model performance statistics (accuracy, precision, recall) if ground truth is available."
+                    },
+                    "response": []
+                }
+            ]
         }
     ],
     "variable": [

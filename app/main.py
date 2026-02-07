@@ -294,9 +294,11 @@ async def get_advisory(request: Request, advisory_request: AdvisoryRequest):
         tracker = get_performance_tracker()
         
         # Handle both old and new response formats
-        taluk_name = result['location'].get('taluk', result['location'].get('area', 'Unknown'))
+        taluk_name = result.get('location', {}).get('taluk', result.get('location', {}).get('area', 'Unknown'))
         main_prediction = result.get('prediction', {}).get('month_status') or result.get('rainfall', {}).get('monthly_prediction', {}).get('category', 'Unknown')
-        confidence = result.get('prediction', {}).get('confidence', {}) or result.get('rainfall', {}).get('monthly_prediction', {}).get('confidence_percent', 0)
+        
+        # FIX: Get full confidence dict from technical_details if available, else fallback
+        confidence = result.get('technical_details', {}).get('confidence_scores') or result.get('prediction', {}).get('confidence', {})
         
         # Logic to determine if alert was shown
         alert_shown = False

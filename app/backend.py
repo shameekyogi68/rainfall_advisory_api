@@ -296,28 +296,60 @@ class FeatureEngineer:
 
 # ==================== B3: ML INFERENCE ====================
 class RainfallPredictor:
-    def __init__(self):
+    _instance = None
+    _model = None
+    _schema = None
+    _quantifier = None
+    
+    def __new__(cls):
+        """Singleton pattern: only create one instance"""
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+            cls._load_model()
+        return cls._instance
+    
+    @classmethod
+    def _load_model(cls):
+        """Load model once and cache in memory"""
+        if cls._model is not None:
+            return  # Already loaded
+            
         try:
+            logger.info("Loading ML model (first time)...")
             with open(MODEL_CLASSIFIER, 'rb') as f:
-                self.model = pickle.load(f)
+                cls._model = pickle.load(f)
             
             with open(FEATURE_SCHEMA, 'r') as f:
-                self.schema = json.load(f)
+                cls._schema = json.load(f)
                 
             # Initialize UncertaintyQuantifier
             try:
-                self.quantifier = UncertaintyQuantifier(
+                cls._quantifier = UncertaintyQuantifier(
                     model_path=str(MODEL_CLASSIFIER),
                     taluk_models_path=str(settings.TALUK_MODELS_PATH)
                 )
             except Exception as e:
                 logger.warning(f"UncertaintyQuantifier failed to init: {e}")
-                self.quantifier = None
+                cls._quantifier = None
+            
+            logger.info("✅ ML model loaded and cached")
                 
         except FileNotFoundError:
             raise RuntimeError("ML model file not found")
         except Exception as e:
             raise RuntimeError(f"Error loading ML model: {str(e)}")
+    
+    @property
+    def model(self):
+        return self._model
+    
+    @property
+    def schema(self):
+        return self._schema
+    
+    @property
+    def quantifier(self):
+        return self._quantifier
     
     def predict(self, features_dict, taluk=None):
         """
@@ -526,73 +558,80 @@ def build_farmer_response(ml_category, forecast_7day_mm, taluk, geo_confidence, 
             "forecast_available": forecast_7day_mm is not None,
             "uncertainty_analysis": uncertainty_data.get('uncertainty') if uncertainty_data else None,
             "prediction_intervals": uncertainty_data.get('prediction_intervals') if uncertainty_data else None
+        },
+        
+        # Location info (Required by main.py logging)
+        "location": {
+            "taluk": taluk,
+            "district": "Udupi",
+            "confidence": geo_confidence
         }
     }
 
 # ==================== ERROR RESPONSE BUILDER ====================
 def build_error_response(error_type, error_message, user_friendly=True):
     """
-    Build user-friendly error responses
+    Build user-friendly error responses with refined translations
     """
     error_messages = {
         "gps_error": {
             "title": {
                 "en": "Location Problem",
-                "kn": "ಸ್ಥಳ ಸಮಸ್ಯೆ"
+                "kn": "ಸ್ಥಳ ಪತ್ತೆ ಸಮಸ್ಯೆ"
             },
             "message": {
                 "en": "We cannot find your location. Please check if you are in Udupi district.",
-                "kn": "ನಿಮ್ಮ ಸ್ಥಳ ಹುಡುಕಲು ಆಗುತ್ತಿಲ್ಲ. ದಯವಿಟ್ಟು ನೀವು ಉಡುಪಿ ಜಿಲ್ಲೆಯಲ್ಲಿದ್ದೀರಾ ಎಂದು ಪರೀಕ್ಷಿಸಿ."
+                "kn": "ನಿಮ್ಮ ಸ್ಥಳವನ್ನು ಪತ್ತೆಹಚ್ಚಲು ಸಾಧ್ಯವಾಗುತ್ತಿಲ್ಲ. ನೀವು ಉಡುಪಿ ಜಿಲ್ಲೆಯಲ್ಲಿದ್ದೀರಾ ಎಂದು ಪರಿಶೀಲಿಸಿ."
             },
             "icon": "📍",
             "action": {
                 "en": "Turn on GPS and try again",
-                "kn": "GPS ಆನ್ ಮಾಡಿ ಮತ್ತು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ"
+                "kn": "GPS ಆನ್ ಮಾಡಿ ಮತ್ತೊಮ್ಮೆ ಪ್ರಯತ್ನಿಸಿ"
             }
         },
         "data_error": {
             "title": {
-                "en": "Not Enough Information",
-                "kn": "ಸಾಕಷ್ಟು ಮಾಹಿತಿ ಇಲ್ಲ"
+                "en": "Data Not Available",
+                "kn": "ಮಾಹಿತಿ ಲಭ್ಯವಿಲ್ಲ"
             },
             "message": {
-                "en": "We don't have enough data for your area yet.",
-                "kn": "ನಿಮ್ಮ ಪ್ರದೇಶಕ್ಕೆ ಇನ್ನೂ ಸಾಕಷ್ಟು ಡೇಟಾ ಇಲ್ಲ."
+                "en": "We don't have enough rainfall data for your area yet.",
+                "kn": "ನಿಮ್ಮ ಪ್ರದೇಶದ ಮಳೆಯ ಮಾಹಿತಿಯು ಸದ್ಯಕ್ಕೆ ನಮ್ಮ ಬಳಿ ಇಲ್ಲ."
             },
             "icon": "📊",
             "action": {
-                "en": "Please contact support",
-                "kn": "ದಯವಿಟ್ಟು ಸಹಾಯ ಕೇಂದ್ರವನ್ನು ಸಂಪರ್ಕಿಸಿ"
+                "en": "Contact Support",
+                "kn": "ಸಹಾಯವಾಣಿಗೆ ಕರೆ ಮಾಡಿ"
             }
         },
         "date_error": {
             "title": {
-                "en": "Date Problem",
-                "kn": "ದಿನಾಂಕ ಸಮಸ್ಯೆ"
+                "en": "Invalid Date",
+                "kn": "ದಿನಾಂಕ ತಪ್ಪಾಗಿದೆ"
             },
             "message": {
                 "en": "The date you selected is not valid.",
-                "kn": "ನೀವು ಆರಿಸಿದ ದಿನಾಂಕ ಮಾನ್ಯವಾಗಿಲ್ಲ."
+                "kn": "ನೀವು ಆಯ್ಕೆ ಮಾಡಿದ ದಿನಾಂಕ ಸರಿಯಿಲ್ಲ."
             },
             "icon": "📅",
             "action": {
-                "en": "Select a date within next 30 days",
-                "kn": "ಮುಂದಿನ 30 ದಿನಗಳಲ್ಲಿ ದಿನಾಂಕ ಆರಿಸಿ"
+                "en": "Select a valid date",
+                "kn": "ಸರಿಯಾದ ದಿನಾಂಕವನ್ನು ಆರಿಸಿ"
             }
         },
         "system_error": {
             "title": {
-                "en": "System Problem",
-                "kn": "ಸಿಸ್ಟಮ್ ಸಮಸ್ಯೆ"
+                "en": "System Error",
+                "kn": "ತಾಂತ್ರಿಕ ದೋಷ"
             },
             "message": {
-                "en": "Something went wrong. Please try again.",
-                "kn": "ಏನೋ ತಪ್ಪಾಗಿದೆ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ."
+                "en": "Something went wrong. Please try again later.",
+                "kn": "ಏನೋ ತಪ್ಪಾಗಿದೆ. ದಯವಿಟ್ಟು ಸ್ವಲ್ಪ ಸಮಯದ ನಂತರ ಪ್ರಯತ್ನಿಸಿ."
             },
             "icon": "⚙️",
             "action": {
-                "en": "Try again in a few minutes",
-                "kn": "ಕೆಲವು ನಿಮಿಷಗಳಲ್ಲಿ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ"
+                "en": "Try again",
+                "kn": "ಮತ್ತೊಮ್ಮೆ ಪ್ರಯತ್ನಿಸಿ"
             }
         }
     }
