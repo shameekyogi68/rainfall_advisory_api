@@ -1,0 +1,19 @@
+date,window_start,window_end,event_type,expected_behavior,climatology_basis,ml_test_use,event_source,confidence
+2026-01-15,2026-01-01,2026-02-28,dry_spell,Deficit or Normal,Udupi winter minimal rainfall,False-alarm control,synthetic_pattern_based,climatology
+2026-04-01,2026-03-15,2026-04-30,pre_monsoon_convection,Normal or Excess,Thunderstorm bursts begin,Short heavy spikes,synthetic_pattern_based,climatology
+2026-05-25,2026-05-20,2026-06-10,monsoon_onset,Excess,Kerala to Coastal Karnataka progression,Regime shift detection,synthetic_pattern_based,climatology
+2026-06-25,2026-06-20,2026-07-10,active_monsoon,Excess,First strong surge period,Heavy rain recall,synthetic_pattern_based,climatology
+2026-07-20,2026-07-15,2026-08-10,peak_monsoon,Excess,Highest monthly totals historical,Extreme threshold test,synthetic_pattern_based,climatology
+2026-08-25,2026-08-20,2026-09-05,saturation_flood_risk,Excess,Soil already saturated,Flood advisory logic,synthetic_pattern_based,climatology
+2026-09-20,2026-09-15,2026-09-30,break_weak_phase,Normal,Monsoon oscillation,Over-prediction check,synthetic_pattern_based,climatology
+2026-10-15,2026-10-05,2026-10-25,retreat_showers,Normal,Withdrawal variability,Category boundary,synthetic_pattern_based,climatology
+2026-11-15,2026-11-01,2026-12-31,dry_transition,Deficit,Rapid rainfall drop,Stability test,synthetic_pattern_based,climatology
+2027-02-01,2027-01-01,2027-03-31,dry_deficit,Deficit,Seasonal norm,Drought logic test,synthetic_pattern_based,climatology
+2027-04-25,2027-04-10,2027-05-15,convective_storms,Normal or Excess,Pre-monsoon heating,Burst detection,synthetic_pattern_based,climatology
+2027-06-05,2027-05-25,2027-06-15,monsoon_onset_2027,Excess,Historical onset spread,Shift detection,synthetic_pattern_based,climatology
+2027-07-10,2027-06-25,2027-07-20,strong_wet_phase,Excess,Monsoon core,Heavy rain detection,synthetic_pattern_based,climatology
+2027-08-05,2027-07-25,2027-08-20,extreme_rain_phase,Excess,Peak climatology,Extreme class,synthetic_pattern_based,climatology
+2027-08-30,2027-08-25,2027-09-05,flood_clustering,Excess,Multi-day accumulation,Multi-day logic,synthetic_pattern_based,climatology
+2027-09-20,2027-09-10,2027-09-25,weakening_phase,Normal,Oscillation,False positives,synthetic_pattern_based,climatology
+2027-10-15,2027-10-01,2027-10-31,post_monsoon_rain,Normal,Retreat variability,Edge classification,synthetic_pattern_based,climatology
+2027-11-15,2027-11-01,2027-12-31,dry_end_year,Deficit,Seasonal,Baseline precision,synthetic_pattern_based,climatology

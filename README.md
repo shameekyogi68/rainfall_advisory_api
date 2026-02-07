@@ -128,10 +128,10 @@ Run before deploying to ensure production readiness!
 | File | Size | Purpose |
 |------|------|---------|
 | `final_rainfall_classifier_v1.pkl` | 14MB | Trained Random Forest model |
-| `training_table_v1.csv` | 1.1MB | ML training data |
+| `training_table_v2_CORRECTED.csv` | 1.1MB | ML training data |
 | `rainfall_daily_historical_v1.csv` | 362KB | Historical rainfall |
 | `weather_drivers_daily_v1.csv` | 642KB | Weather features |
-| `rainfall_monthly_targets_v1.csv` | 14KB | Target categories |
+| `rainfall_monthly_targets_v2_CORRECTED.csv` | 14KB | Target categories |
 | `taluk_boundaries.json` | 2KB | GPS boundaries |
 | `feature_schema_v1.json` | 338B | Feature schema |
 

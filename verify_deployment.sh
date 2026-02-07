@@ -28,20 +28,24 @@ test_endpoint() {
     
     if eval "$cmd" > /dev/null 2>&1; then
         echo -e "${GREEN}✓ PASSED${NC}"
-        ((PASSED++))
+        ((PASSED+=1))
     else
         echo -e "${RED}✗ FAILED${NC}"
-        ((FAILED++))
+        ((FAILED+=1))
     fi
 }
 
-# 1. Check if server is running
 echo "Step 1: Checking if server is available..."
+# Kill any existing process on port 8000 to ensure fresh start
+lsof -ti:8000 | xargs kill -9 2>/dev/null || true
+echo "Cleaned up port 8000"
+
 if ! curl -s http://localhost:8000/ > /dev/null; then
     echo -e "${YELLOW}⚠️  Server not running. Starting server...${NC}"
-    python3 api_server.py &
+    # python3 api_server.py &
+    uvicorn app.main:app --host 0.0.0.0 --port 8000 &
     SERVER_PID=$!
-    sleep 3
+    sleep 5
     echo "Server started with PID: $SERVER_PID"
 else
     echo -e "${GREEN}✓ Server is running${NC}"
@@ -116,11 +120,11 @@ echo "Step 4: Checking Data Files"
 echo "-----------------------------------"
 
 FILES=(
-    "final_rainfall_classifier_v1.pkl"
-    "rainfall_daily_historical_v1.csv"
-    "weather_drivers_daily_v1.csv"
-    "taluk_boundaries.json"
-    "feature_schema_v1.json"
+    "models/final_rainfall_classifier_v1.pkl"
+    "data/rainfall_daily_historical_v1.csv"
+    "data/weather_drivers_daily_v1.csv"
+    "data/taluk_boundaries.json"
+    "data/feature_schema_v1.json"
 )
 
 for file in "${FILES[@]}"; do
