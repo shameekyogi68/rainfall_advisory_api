@@ -18,7 +18,7 @@ from app.config import settings
 # BASE_DIR is now available in settings
 
 from app.backend import process_advisory_request, TalukMapper, FeatureEngineer, RainfallPredictor
-from app.core.advisory import FarmerAdvisory
+from app.core.advisory import AdvisoryService
 
 # ... (logging setup remains same) ...
 

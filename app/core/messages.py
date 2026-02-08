@@ -221,6 +221,26 @@ FARMER_MESSAGES = {
         "normal": {"en": "Normal", "kn": "ಸಾಮಾನ್ಯ", "icon": "⛅"},
         "more": {"en": "Heavy", "kn": "ಹೆಚ್ಚು", "icon": "🌧️"},
         "very_more": {"en": "Very Heavy", "kn": "ವಿಪರೀತ (ತುಂಬಾ ಹೆಚ್ಚು)", "icon": "⛈️"}
+    },
+    
+    # === CROP NAMES ===
+    "crops": {
+        "paddy": {"en": "Paddy", "kn": "ಭತ್ತ"},
+        "coconut": {"en": "Coconut", "kn": "ತೆಂಗು"},
+        "arecanut": {"en": "Arecanut", "kn": "ಅಡಿಕೆ"},
+        "vegetables": {"en": "Vegetables", "kn": "ತರಕಾರಿ"},
+        "cashew": {"en": "Cashew", "kn": "ಗೇರು"},
+        "pepper": {"en": "Pepper", "kn": "ಕಾಳುಮೆಣಸು"},
+        "banana": {"en": "Banana", "kn": "ಬಾಳೆ"}
+    },
+    
+    # === COMMON TERMS ===
+    "common": {
+        "fertilizer": {"en": "Fertilizer", "kn": "ಗೊಬ್ಬರ"},
+        "pesticide": {"en": "Pesticide", "kn": "ಕೀಟನಾಶಕ"},
+        "irrigation": {"en": "Irrigation", "kn": "ನೀರಾವರಿ"},
+        "drainage": {"en": "Drainage", "kn": "ಬಸಿಗಾಲುವೆ/ಚರಂಡಿ"},
+        "harvest": {"en": "Harvest", "kn": "ಕಟಾವು"}
     }
 }
 

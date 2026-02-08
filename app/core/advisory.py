@@ -10,7 +10,7 @@ from pathlib import Path
 from app.config import settings
 BASE_DIR = Path(settings.BASE_DIR)
 
-class FarmerAdvisory:
+class AdvisoryService:
     """Generate farmer-friendly actionable advice"""
     
     # Crop water requirements (mm/month)
@@ -73,8 +73,8 @@ class FarmerAdvisory:
                     'type': 'HIGH_TEMPERATURE',
                     'severity': 'HIGH',
                     'value': f'{temp_max}°C',
-                    'impact': 'Leaf burn risk, water stress',
-                    'action': 'Irrigate in evening only, avoid midday work',
+                    'impact': {'en': 'Leaf burn risk, water stress', 'kn': 'ಎಲೆ ಸುಡುವಿಕೆ, ನೀರಿನ ಒತ್ತಡ'},
+                    'action': {'en': 'Irrigate in evening only, avoid midday work', 'kn': 'ಸಂಜೆ ಮಾತ್ರ ನೀರು ಹಾಯಿಸಿ, ಮಧ್ಯಾಹ್ನ ಕೆಲಸ ಮಾಡಬೇಡಿ'},
                     'icon': '🔥'
                 })
             elif temp_max > 33:
@@ -83,8 +83,8 @@ class FarmerAdvisory:
                     'type': 'MODERATE_HEAT',
                     'severity': 'MEDIUM',
                     'value': f'{temp_max}°C',
-                    'impact': 'Increased water need',
-                    'action': 'Ensure adequate irrigation',
+                    'impact': {'en': 'Increased water need', 'kn': 'ಹೆಚ್ಚಿನ ನೀರಿನ ಅವಶ್ಯಕತೆ'},
+                    'action': {'en': 'Ensure adequate irrigation', 'kn': 'ಸಾಕಷ್ಟು ನೀರು ಹಾಯಿಸಿ'},
                     'icon': '☀️'
                 })
             
@@ -95,8 +95,8 @@ class FarmerAdvisory:
                     'type': 'COLD_WEATHER',
                     'severity': 'MEDIUM',
                     'value': f'{temp_min}°C',
-                    'impact': 'Slow crop growth',
-                    'action': 'Protect sensitive crops',
+                    'impact': {'en': 'Slow crop growth', 'kn': 'ಬೆಳೆ ಬೆಳವಣಿಗೆ ನಿಧಾನ'},
+                    'action': {'en': 'Protect sensitive crops', 'kn': 'ಸೂಕ್ಷ್ಮ ಬೆಳೆಗಳನ್ನು ರಕ್ಷಿಸಿ'},
                     'icon': '🌡️'
                 })
             
@@ -107,8 +107,8 @@ class FarmerAdvisory:
                     'type': 'HEAVY_RAIN',
                     'severity': 'HIGH',
                     'value': f'{rain}mm',
-                    'impact': 'Flooding risk, soil erosion',
-                    'action': 'Clear drainage, harvest ready crops',
+                    'impact': {'en': 'Flooding risk, soil erosion', 'kn': 'ಪ್ರವಾಹ ಭೀತಿ, ಮಣ್ಣು ಕೊಚ್ಚಿ ಹೋಗುವಿಕೆ'},
+                    'action': {'en': 'Clear drainage, harvest ready crops', 'kn': 'ಚರಂಡಿ ಸ್ವಚ್ಛಗೊಳಿಸಿ, ಕಟಾವು ಮಾಡಿ'},
                     'icon': '⛈️'
                 })
             elif rain > 25:
@@ -117,8 +117,8 @@ class FarmerAdvisory:
                     'type': 'MODERATE_RAIN',
                     'severity': 'MEDIUM',
                     'value': f'{rain}mm',
-                    'impact': 'Waterlogging possible',
-                    'action': 'Monitor drainage channels',
+                    'impact': {'en': 'Waterlogging possible', 'kn': 'ನೀರು ನಿಲ್ಲುವ ಸಾಧ್ಯತೆ'},
+                    'action': {'en': 'Monitor drainage channels', 'kn': 'ಕಾಲುವೆಗಳನ್ನು ಗಮನಿಸಿ'},
                     'icon': '🌧️'
                 })
         
@@ -129,22 +129,22 @@ class FarmerAdvisory:
         
         if category == 'Excess':
             if confidence >= 70:
-                return 'HIGH', '🔴', 'Heavy rain very likely'
+                return 'HIGH', '🔴', {'en': 'Heavy rain very likely', 'kn': 'ಭಾರೀ ಮಳೆ ನಿರೀಕ್ಷೆ'}
             elif confidence >= 50:
-                return 'MEDIUM', '🟡', 'Heavy rain possible'
+                return 'MEDIUM', '🟡', {'en': 'Heavy rain possible', 'kn': 'ಭಾರೀ ಮಳೆ ಸಾಧ್ಯತೆ'}
             else:
-                return 'LOW', '🟢', 'Heavy rain unlikely'
+                return 'LOW', '🟢', {'en': 'Heavy rain unlikely', 'kn': 'ಭಾರೀ ಮಳೆ ಸಾಧ್ಯತೆ ಕಡಿಮೆ'}
         
         elif category == 'Deficit':
             if confidence >= 70:
-                return 'HIGH', '🔴', 'Drought conditions very likely'
+                return 'HIGH', '🔴', {'en': 'Drought conditions very likely', 'kn': 'ಬರಗಾಲದ ಸಾಧ್ಯತೆ ಹೆಚ್ಚು'}
             elif confidence >= 50:
-                return 'MEDIUM', '🟡', 'Dry conditions possible'
+                return 'MEDIUM', '🟡', {'en': 'Dry conditions possible', 'kn': 'ಒಣ ಹವೆ ಸಾಧ್ಯತೆ'}
             else:
-                return 'LOW', '🟢', 'Normal conditions likely'
+                return 'LOW', '🟢', {'en': 'Normal conditions likely', 'kn': 'ಸಾಧಾರಣ ಸ್ಥಿತಿ ನಿರೀಕ್ಷೆ'}
         
         else:  # Normal
-            return 'LOW', '🟢', 'Normal conditions expected'
+            return 'LOW', '🟢', {'en': 'Normal conditions expected', 'kn': 'ಸಾಮಾನ್ಯ ಸ್ಥಿತಿ ನಿರೀಕ್ಷೆ'}
     
     def get_actions_for_excess(self, confidence):
         """Actionable recommendations for excess rainfall"""
@@ -156,21 +156,21 @@ class FarmerAdvisory:
         
         if confidence >= 60:
             actions['immediate'] = [
-                '⚠️ Postpone fertilizer application',
-                '⚠️ Harvest ready crops within 2-3 days',
-                '⚠️ Prepare drainage channels',
-                '⚠️ Store harvested grain indoors'
+                {'en': '⚠️ Postpone fertilizer application', 'kn': '⚠️ ಗೊಬ್ಬರ ಹಾಕುವುದನ್ನು ಮುಂದೂಡಿ'},
+                {'en': '⚠️ Harvest ready crops within 2-3 days', 'kn': '⚠️ 2-3 ದಿನಗಳಲ್ಲಿ ಬೆಳೆ ಕಟಾವು ಮಾಡಿ'},
+                {'en': '⚠️ Prepare drainage channels', 'kn': '⚠️ ನೀರು ಹೋಗಲು ಕಾಲುವೆ ಸರಿಪಡಿಸಿ'},
+                {'en': '⚠️ Store harvested grain indoors', 'kn': '⚠️ ಕಟಾವು ಮಾಡಿದ ಫಸಲನ್ನು ಒಳಗೆ ಇಡಿ'}
             ]
             actions['this_week'] = [
-                'Check field drainage daily',
-                'Monitor crops for waterlogging',
-                'Apply fungicide if moisture persists'
+                {'en': 'Check field drainage daily', 'kn': 'ಪ್ರತಿದಿನ ಕಾಲುವೆ ಪರೀಕ್ಷಿಸಿ'},
+                {'en': 'Monitor crops for waterlogging', 'kn': 'ನೀರು ನಿಲ್ಲದಂತೆ ನೋಡಿಕೊಳ್ಳಿ'},
+                {'en': 'Apply fungicide if moisture persists', 'kn': 'ತೇವಾಂಶ ಹೆಚ್ಚಿದ್ದರೆ ಶಿಲೀಂಧ್ರನಾಶಕ ಬಳಸಿ'}
             ]
         else:
             actions['prepare'] = [
-                'Monitor weather updates daily',
-                'Keep drainage tools ready',
-                'Plan to harvest ripe crops if rain increases'
+                {'en': 'Monitor weather updates daily', 'kn': 'ದಿನವೂ ಹವಾಮಾನ ವರದಿ ಗಮನಿಸಿ'},
+                {'en': 'Keep drainage tools ready', 'kn': 'ಕಾಲುವೆ ಸರಿಪಡಿಸಲು ಉಪಕರಣ ಸಿದ್ಧವಿಡಿ'},
+                {'en': 'Plan to harvest ripe crops if rain increases', 'kn': 'ಮಳೆ ಹೆಚ್ಚಾದರೆ ಕಟಾವು ಮಾಡಲು ಯೋಜಿಸಿ'}
             ]
         
         return actions
@@ -185,21 +185,21 @@ class FarmerAdvisory:
         
         if confidence >= 60:
             actions['immediate'] = [
-                '💧 Plan irrigation for next 7 days',
-                '💧 Mulch around plants to retain moisture',
-                '💧 Reduce water-intensive activities',
-                '💧 Check irrigation equipment'
+                {'en': '💧 Plan irrigation for next 7 days', 'kn': '💧 ಮುಂದಿನ 7 ದಿನಗಳಿಗೆ ನೀರು ಹಾಯಿಸಲು ಯೋಜಿಸಿ'},
+                {'en': '💧 Mulch around plants to retain moisture', 'kn': '💧 ತೇವಾಂಶ ಉಳಿಸಲು ಗಿಡಗಳ ಬುಡಕ್ಕೆ ಮಲ್ಚಿಂಗ್ ಮಾಡಿ'},
+                {'en': '💧 Reduce water-intensive activities', 'kn': '💧 ಹೆಚ್ಚು ನೀರು ಬೇಕಾಗುವ ಕೆಲಸ ಕಡಿಮೆ ಮಾಡಿ'},
+                {'en': '💧 Check irrigation equipment', 'kn': '💧 ಪಂಪ್ ಮತ್ತು ಪೈಪ್‌ಗಳನ್ನು ಪರೀಕ್ಷಿಸಿ'}
             ]
             actions['this_week'] = [
-                'Irrigate 2-3 times this week',
-                'Monitor soil moisture daily',
-                'Avoid planting water-intensive crops'
+                {'en': 'Irrigate 2-3 times this week', 'kn': 'ಈ ವಾರ 2-3 ಬಾರಿ ನೀರು ಹಾಯಿಸಿ'},
+                {'en': 'Monitor soil moisture daily', 'kn': 'ದಿನದ ತೇವಾಂಶ ಗಮನಿಸಿ'},
+                {'en': 'Avoid planting water-intensive crops', 'kn': 'ಹೆಚ್ಚು ನೀರು ಬೇಕಾಗುವ ಬೆಳೆ ಹಾಕಬೇಡಿ'}
             ]
         else:
             actions['prepare'] = [
-                'Prepare irrigation backup plan',
-                'Monitor soil moisture',
-                'Wait before adding new crops'
+                {'en': 'Prepare irrigation backup plan', 'kn': 'ಪರ್ಯಾಯ ನೀರಿನ ವ್ಯವಸ್ಥೆ ಮಾಡಿ'},
+                {'en': 'Monitor soil moisture', 'kn': 'ಮಣ್ಣಿನ ತೇವಾಂಶ ಗಮನಿಸಿ'},
+                {'en': 'Wait before adding new crops', 'kn': 'ಹೊಸ ಬೆಳೆ ಹಾಕುವ ಮೊದಲು ಕಾಯಿರಿ'}
             ]
         
         return actions
@@ -208,10 +208,10 @@ class FarmerAdvisory:
         """Recommendations for normal conditions"""
         return {
             'this_week': [
-                '✅ Proceed with normal farming activities',
-                '✅ Good time for fertilizer application',
-                '✅ Can plant new crops',
-                '✅ Regular irrigation schedule'
+                {'en': '✅ Proceed with normal farming activities', 'kn': '✅ ಎಂದಿನಂತೆ ಕೃಷಿ ಕೆಲಸ ಮುಂದುವರಿಸಿ'},
+                {'en': '✅ Good time for fertilizer application', 'kn': '✅ ಗೊಬ್ಬರ ಹಾಕಲು ಇದು ಸೂಕ್ತ ಸಮಯ'},
+                {'en': '✅ Can plant new crops', 'kn': '✅ ಹೊಸ ಬೆಳೆಗಳನ್ನು ನಾಟಿ ಮಾಡಬಹುದು'},
+                {'en': '✅ Regular irrigation schedule', 'kn': '✅ ವಾಡಿಕೆಯಂತೆ ನೀರು ಹಾಯಿಸಿ'}
             ]
         }
     
@@ -239,44 +239,44 @@ class FarmerAdvisory:
                 if category == 'Deficit' and confidence > 50:
                     if i in [0, 2, 4]:  # Mon, Wed, Fri pattern
                         day_actions['actions'].append({
-                            'time': '6-9am',
-                            'action': 'Irrigate fields',
-                            'why': 'Before temperature rises, water absorption better',
+                            'time': {'en': '6-9am', 'kn': 'ಬೆಳಿಗ್ಗೆ 6-9'},
+                            'action': {'en': 'Irrigate fields', 'kn': 'ಹೊಲಕ್ಕೆ ನೀರು ಹಾಯಿಸಿ'},
+                            'why': {'en': 'Before temperature rises, water absorption better', 'kn': 'ಬಿಸಿಲು ಏರುವ ಮುನ್ನ ನೀರು ಚೆನ್ನಾಗಿ ಹೀರಲ್ಪಡುತ್ತದೆ'},
                             'priority': 'HIGH'
                         })
                 
                 # Fertilizer on dry days
                 if i == 1 and rain_mm < 1:  # Tuesday if confirmed dry
                     day_actions['actions'].append({
-                        'time': '6-7pm',
-                        'action': 'Apply fertilizer',
-                        'why': 'Cool evening, no rain predicted tomorrow',
+                        'time': {'en': '6-7pm', 'kn': 'ಸಂಜೆ 6-7'},
+                        'action': {'en': 'Apply fertilizer', 'kn': 'ಗೊಬ್ಬರ ಹಾಕಿ'},
+                        'why': {'en': 'Cool evening, no rain predicted tomorrow', 'kn': 'ತಂಪಾದ ಸಂಜೆ, ನಾಳೆ ಮಳೆ ಇಲ್ಲ'},
                         'priority': 'MEDIUM'
                     })
             
             # Rain day actions
             if rain_mm > 10:  # Heavy rain predicted
                 day_actions['actions'].append({
-                    'time': 'Before 12pm',
-                    'action': 'Check drainage channels',
-                    'why': f'Heavy rain expected ({rain_mm:.0f}mm)',
+                    'time': {'en': 'Before 12pm', 'kn': 'ಮಧ್ಯಾಹ್ನ 12ರ ಒಳಗೆ'},
+                    'action': {'en': 'Check drainage channels', 'kn': 'ಕಾಲುವೆಗಳನ್ನು ಪರೀಕ್ಷಿಸಿ'},
+                    'why': {'en': f'Heavy rain expected ({rain_mm:.0f}mm)', 'kn': f'ಭಾರೀ ಮಳೆ ನಿರೀಕ್ಷೆಯಿದೆ ({rain_mm:.0f}mm)'},
                     'priority': 'HIGH'
                 })
                 
                 if i == 0:  # Today
                     day_actions['actions'].append({
-                        'time': 'Immediately',
-                        'action': 'Harvest ready crops',
-                        'why': 'Protect from rain damage',
+                        'time': {'en': 'Immediately', 'kn': 'ತಕ್ಷಣವೇ'},
+                        'action': {'en': 'Harvest ready crops', 'kn': 'ಫಸಲು ಕಟಾವು ಮಾಡಿ'},
+                        'why': {'en': 'Protect from rain damage', 'kn': 'ಮಳೆಯಿಂದ ರಕ್ಷಿಸಲು'},
                         'priority': 'URGENT'
                     })
             
             # General field work on good days
             if 2 < rain_mm < 5 and temp_max < 32:
                 day_actions['actions'].append({
-                    'time': '7-11am',
-                    'action': 'Regular field work',
-                    'why': 'Good weather conditions',
+                    'time': {'en': '7-11am', 'kn': 'ಬೆಳಿಗ್ಗೆ 7-11'},
+                    'action': {'en': 'Regular field work', 'kn': 'ಸಾಮಾನ್ಯ ಕೆಲಸಗಳು'},
+                    'why': {'en': 'Good weather conditions', 'kn': 'ಉತ್ತಮ ಹವಾಮಾನ'},
                     'priority': 'LOW'
                 })
             
@@ -298,8 +298,18 @@ class FarmerAdvisory:
                 continue
             
             needs = self.CROP_WATER_NEEDS[crop]
+            # crop name translation mapping
+            crop_kn = {
+                'paddy': 'ಭತ್ತ',
+                'coconut': 'ತೆಂಗು', 
+                'vegetables': 'ತರಕಾರಿ',
+                'areca': 'ಅಡಿಕೆ',
+                'cashew': 'ಗೇರು',
+                'mango': 'ಮಾವಿನ'
+            }.get(crop, crop)
+            
             crop_advice = {
-                'name': crop.title(),
+                'name': {'en': crop.title(), 'kn': crop_kn},
                 'water_need': 'HIGH' if monthly_rain_mm < needs['low'] else 'ADEQUATE',
                 'actions': []
             }
@@ -307,46 +317,46 @@ class FarmerAdvisory:
             if category == 'Excess':
                 if crop == 'paddy':
                     crop_advice['actions'] = [
-                        'Ensure proper drainage',
-                        'Monitor for pest diseases',
-                        'Avoid fertilizer application'
+                        {'en': 'Ensure proper drainage', 'kn': 'ನೀರು ಸರಾಗವಾಗಿ ಹೋಗುವಂತೆ ಮಾಡಿ'},
+                        {'en': 'Monitor for pest diseases', 'kn': 'ಕೀಟಬಾಧೆ ಇದೆಯೇ ಎಂದು ಪರೀಕ್ಷಿಸಿ'},
+                        {'en': 'Avoid fertilizer application', 'kn': 'ಗೊಬ್ಬರ ಹಾಕಬೇಡಿ'}
                     ]
                 elif crop == 'vegetables':
                     crop_advice['actions'] = [
-                        'Cover with plastic during heavy rain',
-                        'Apply fungicide preventively',
-                        'Harvest ripe vegetables immediately'
+                        {'en': 'Cover with plastic during heavy rain', 'kn': 'ಭಾರೀ ಮಳೆಗಾಲದಲ್ಲಿ ಪ್ಲಾಸ್ಟಿಕ್ ಹೊದಿಕೆ ಹಾಕಿ'},
+                        {'en': 'Apply fungicide preventively', 'kn': 'ಮುಂಜಾಗ್ರತೆಯಾಗಿ ಶಿಲೀಂಧ್ರನಾಶಕ ಸಿಂಪಡಿಸಿ'},
+                        {'en': 'Harvest ripe vegetables immediately', 'kn': 'ಮಾಗಿದ ತರಕಾರಿಗಳನ್ನು ಕೂಡಲೇ ಕಟಾವು ಮಾಡಿ'}
                     ]
                 elif crop == 'coconut':
                     crop_advice['actions'] = [
-                        'No special action needed',
-                        'Natural drainage sufficient'
+                        {'en': 'No special action needed', 'kn': 'ವಿಶೇಷ ಕ್ರಮ ಬೇಕಿಲ್ಲ'},
+                        {'en': 'Natural drainage sufficient', 'kn': 'ಸ್ವಾಭಾವಿಕವಾಗಿ ನೀರು ಹರಿದು ಹೋಗುತ್ತದೆ'}
                     ]
             
             elif category == 'Deficit':
                 if crop == 'paddy':
                     crop_advice['actions'] = [
-                        f'Irrigate 2-3 times per week',
-                        'Especially important during flowering',
-                        'Monitor for water stress'
+                        {'en': 'Irrigate 2-3 times per week', 'kn': 'ವಾರಕ್ಕೆ 2-3 ಬಾರಿ ನೀರು ಹಾಯಿಸಿ'},
+                        {'en': 'Especially important during flowering', 'kn': 'ಹೂ ಬಿಡುವ ಸಮಯದಲ್ಲಿ ನೀರು ಮುಖ್ಯ'},
+                        {'en': 'Monitor for water stress', 'kn': 'ನೀರಿನ ಕೊರತೆ ಆಗದಂತೆ ನೋಡಿಕೊಳ್ಳಿ'}
                     ]
                 elif crop == 'vegetables':
                     crop_advice['actions'] = [
-                        'Daily irrigation required',
-                        'Mulch to retain moisture',
-                        'Consider drip irrigation'
+                        {'en': 'Daily irrigation required', 'kn': 'ಪ್ರತಿದಿನ ನೀರು ಹಾಯಿಸಬೇಕು'},
+                        {'en': 'Mulch to retain moisture', 'kn': 'ತೇವಾಂಶ ಉಳಿಸಲು ಮಲ್ಚಿಂಗ್ ಮಾಡಿ'},
+                        {'en': 'Consider drip irrigation', 'kn': 'ಹನಿ ನೀರಾವರಿ ಬಳಸಿ'}
                     ]
                 elif crop == 'coconut':
                     crop_advice['actions'] = [
-                        'Weekly watering if no rain',
-                        'Focus on young palms',
-                        'Mature trees can tolerate dry spell'
+                        {'en': 'Weekly watering if no rain', 'kn': 'ಮಳೆ ಇಲ್ಲದಿದ್ದರೆ ವಾರಕ್ಕೊಮ್ಮೆ ನೀರು ಕೊಡಿ'},
+                        {'en': 'Focus on young palms', 'kn': 'ಚಿಕ್ಕ ಸಸಿಗಳಿಗೆ ಗಮನ ಕೊಡಿ'},
+                        {'en': 'Mature trees can tolerate dry spell', 'kn': 'ದೊಡ್ಡ ಮರಗಳು ಬರವನ್ನು ತಡೆದುಕೊಳ್ಳುತ್ತವೆ'}
                     ]
             
             else:  # Normal
                 crop_advice['actions'] = [
-                    f'Normal watering schedule',
-                    f'Good conditions for {crop}'
+                    {'en': 'Normal watering schedule', 'kn': 'ವಾಡಿಕೆಯಂತೆ ನೀರು ಹಾಯಿಸಿ'},
+                    {'en': f'Good conditions for {crop}', 'kn': f'{crop_kn} ಬೆಳೆಗೆ ಉತ್ತಮ ವಾತಾವರಣ'}
                 ]
             
             advice[crop] = crop_advice
@@ -381,11 +391,11 @@ class FarmerAdvisory:
         
         # Add interpretation
         if confidence >= 70:
-            stats['reliability'] = 'Very reliable - Similar predictions correct 9/10 times'
+            stats['reliability'] = {'en': 'Very reliable - Similar predictions correct 9/10 times', 'kn': 'ಬಹಳ ನಂಬಲರ್ಹ - 10ರಲ್ಲಿ 9 ಬಾರಿ ಸರಿಯಾಗಿದೆ'}
         elif confidence >= 50:
-            stats['reliability'] = 'Reliable - Prepare for both scenarios'
+            stats['reliability'] = {'en': 'Reliable - Prepare for both scenarios', 'kn': 'ನಂಬಲರ್ಹ - ಎರಡೂ ಸಾಧ್ಯತೆಗಳಿಗೆ ಸಿದ್ಧರಾಗಿರಿ'}
         else:
-            stats['reliability'] = 'Moderate - Monitor forecast updates'
+            stats['reliability'] = {'en': 'Moderate - Monitor forecast updates', 'kn': 'ಸಾಧಾರಣ - ಹವಾಮಾನ ವರದಿ ಗಮನಿಸುತ್ತಿರಿ'}
         
         # Historical comparison for this category
         stats['category_performance'] = {
@@ -434,36 +444,47 @@ class FarmerAdvisory:
             12: (20, 50, 'dry season')      # December
         }
         
-        low, high, season = monthly_normals.get(current_month, (50, 150, 'normal'))
+        low, high, season_code = monthly_normals.get(current_month, (50, 150, 'normal'))
         
         # Determine status
         if monthly_rain_mm < low:
-            status = 'Below average'
-            concern = 'Drier than usual for {}'.format(month_name)
+            status = {'en': 'Below average', 'kn': 'ಸರಾಸರಿಗಿಂತ ಕಡಿಮೆ'}
+            concern = {'en': 'Drier than usual for {}'.format(month_name), 'kn': '{} ತಿಂಗಳಲ್ಲಿ ವಾಡಿಕೆಗಿಂತ ಕಡಿಮೆ ಮಳೆ'.format(month_name)}
         elif monthly_rain_mm > high:
-            status = 'Above average'
-            concern = 'Wetter than usual for {}'.format(month_name)
+            status = {'en': 'Above average', 'kn': 'ಸರಾಸರಿಗಿಂತ ಹೆಚ್ಚು'}
+            concern = {'en': 'Wetter than usual for {}'.format(month_name), 'kn': '{} ತಿಂಗಳಲ್ಲಿ ವಾಡಿಕೆಗಿಂತ ಹೆಚ್ಚು ಮಳೆ'.format(month_name)}
         else:
-            status = 'Normal'
-            concern = 'Typical for {}'.format(month_name)
+            status = {'en': 'Normal', 'kn': 'ಸಾಮಾನ್ಯ'}
+            concern = {'en': 'Typical for {}'.format(month_name), 'kn': '{} ತಿಂಗಳಿಗೆ ಸರಿಯಾಗಿದೆ'.format(month_name)}
+        
+        season_map = {
+            'dry season': {'en': 'Dry Season', 'kn': 'ಒಣ ಹವೆ ಕಾಲ'},
+            'pre-monsoon': {'en': 'Pre-Monsoon', 'kn': 'ಮುಂಗಾರು ಪೂರ್ವ'},
+            'monsoon onset': {'en': 'Monsoon Onset', 'kn': 'ಮುಂಗಾರು ಆರಂಭ'},
+            'peak monsoon': {'en': 'Peak Monsoon', 'kn': 'ಭಾರೀ ಮಳೆಗಾಲ'},
+            'monsoon': {'en': 'Monsoon', 'kn': 'ಮಳೆಗಾಲ'},
+            'post-monsoon': {'en': 'Post-Monsoon', 'kn': 'ಹಿಂಗಾರು'},
+            'retreating': {'en': 'Retreating Monsoon', 'kn': 'ಹಿಂಗಾರು ನಿರ್ಗಮನ'},
+            'normal': {'en': 'Normal', 'kn': 'ಸಾಮಾನ್ಯ'}
+        }
         
         context = {
             'month': month_name,
-            'season': season.title(),
+            'season': season_map.get(season_code, {'en': season_code, 'kn': season_code}),
             'normal_range': f'{low}-{high}mm',
             'predicted': f'{monthly_rain_mm}mm',
             'status': status,
             'assessment': concern,
-            'is_unusual': status != 'Normal'
+            'is_unusual': status['en'] != 'Normal'
         }
         
         # Add seasonal advice
-        if season == 'dry season':
-            context['seasonal_note'] = 'Normal dry period - irrigation planning important'
-        elif season == 'peak monsoon':
-            context['seasonal_note'] = 'Heavy rain season - drainage critical'
-        elif season == 'pre-monsoon':
-            context['seasonal_note'] = 'Prepare for upcoming monsoon'
+        if 'dry' in season_code:
+            context['seasonal_note'] = {'en': 'Normal dry period - irrigation planning important', 'kn': 'ಸಾಮಾನ್ಯ ಒಣ ಹವೆ - ನೀರಾವರಿ ಯೋಜನೆ ಮುಖ್ಯ'}
+        elif 'monsoon' in season_code:
+            context['seasonal_note'] = {'en': 'Heavy rain season - drainage critical', 'kn': 'ಮಳೆಗಾಲ - ನೀರು ಹರಿದು ಹೋಗಲು ಕಾಲುವೆ ಮುಖ್ಯ'}
+        elif 'pre' in season_code:
+            context['seasonal_note'] = {'en': 'Prepare for upcoming monsoon', 'kn': 'ಮುಂದಿನ ಮಳೆಗಾಲಕ್ಕೆ ಸಿದ್ಧರಾಗಿ'}
         
         return context
     

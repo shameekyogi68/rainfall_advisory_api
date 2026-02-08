@@ -533,30 +533,63 @@ def build_farmer_response(ml_category, forecast_7day_mm, taluk, geo_confidence, 
     from app.core.rules import generate_alert
     
     # INTENSITY CHECK (Local Logic for Flash Flood)
+    # INTENSITY CHECK (Local Logic for Flash Flood)
     if max_intensity_mm_per_hr > 15.0:
         # Flash Flood Override
         alert = {
             "status": "DANGER",
             "severity": "CRITICAL",
             "type": "FLASH_FLOOD",
-            "sms_text": "CRITICAL: Flash Flood Risk (>15mm/hr). Drain fields immediately. Stop fertilizer application.",
-            "whatsapp_text": "🚨 *CROP DANGER: FLASH FLOOD*\n\nIntense rainfall (>15mm/hr) detected.\n\n*Action Required:*\n- Open all drainage channels\n- Postpone fertilizer/chemical spraying\n- Protect harvested crops"
+            "sms_text": {
+                "en": "CRITICAL: Flash Flood Risk (>15mm/hr). Drain fields immediately. Stop fertilizer application.",
+                "kn": "ತುರ್ತು: ದಿಢೀರ್ ಪ್ರವಾಹ ಸಾಧ್ಯತೆ (>15mm/hr). ಕೂಡಲೇ ನೀರು ಹೊರಹಾಕಿ. ಗೊಬ್ಬರ ಹಾಕಬೇಡಿ."
+            },
+            "whatsapp_text": {
+                "en": "🚨 *CROP DANGER: FLASH FLOOD*\n\nIntense rainfall (>15mm/hr) detected.\n\n*Action Required:*\n- Open all drainage channels\n- Postpone fertilizer/chemical spraying\n- Protect harvested crops",
+                "kn": "🚨 *ಬೆಳೆ ಅಪಾಯ: ದಿಢೀರ್ ಪ್ರವಾಹ*\n\nಭಾರೀ ಮಳೆ (>15mm/hr) ಪತ್ತೆಯಾಗಿದೆ.\n\n*ತುರ್ತು ಕ್ರಮಗಳು:*\n- ಎಲ್ಲಾ ಕಾಲುವೆಗಳನ್ನು ತೆರೆಯಿರಿ\n- ಗೊಬ್ಬರ/ಔಷಧಿ ಸಿಂಪಡಣೆ ಮುಂದೂಡಿ\n- ಕಟಾವು ಮಾಡಿದ ಬೆಳೆ ರಕ್ಷಿಸಿ"
+            }
         }
     else:
         # Standard Rules
         # Note: generate_alert now expects 'confidences' instead of 'ml_rainfall_mm'
         alert = generate_alert(ml_category, confidences, forecast_7day_mm)
 
+    # Instantiate advisory for detailed recommendations
+    from app.core.advisory import AdvisoryService
+    advisory_service = AdvisoryService()
+    
+    # Get detailed advice
+    risk_level, risk_icon, risk_msg = advisory_service.get_risk_level(ml_category, confidences.get(ml_category, 0)*100)
+    
+    # Get actions based on category
+    if ml_category == 'Excess':
+        detailed_actions = advisory_service.get_actions_for_excess(confidences.get('Excess', 0)*100)
+    elif ml_category == 'Deficit':
+        detailed_actions = advisory_service.get_actions_for_deficit(confidences.get('Deficit', 0)*100)
+    else:
+        detailed_actions = advisory_service.get_actions_for_normal()
+
     return {
         "status": "success",
         
         # Main status (large, visual)
         "main_status": {
-            "title": alert['type'].replace("_", " "),
-            "message": {
-                "en": alert['sms_text'], # Using SMS text as short message
-                "kn": "ದಯವಿಟ್ಟು ಎಚ್ಚರದಿಂದಿರಿ" # Placeholder for Kannada
+            "title": {
+                "en": alert['type'].replace("_", " "),
+                "kn": {
+                    "FLOOD": "ಪ್ರವಾಹ",
+                    "DROUGHT": "ಬರಗಾಲ",
+                    "NORMAL": "ಸಾಧಾರಣ",
+                    "WET_NORMAL": "ತೇವಭರಿತ",
+                    "DROUGHT_RELIEF": "ಬರ ಪರಿಹಾರ",
+                    "FLASH_FLOOD": "ದಿಢೀರ್ ಪ್ರವಾಹ",
+                    "HIGH_TEMPERATURE": "ಹೆಚ್ಚಿನ ಉಷ್ಣಾಂಶ",
+                    "COLD_WEATHER": "ಶೀತ ಹವಾಮಾನ",
+                    "HEAVY_RAIN": "ಭಾರೀ ಮಳೆ",
+                    "MODERATE_RAIN": "ಸಾಧಾರಣ ಮಳೆ"
+                }.get(alert['type'], alert['type'])
             },
+            "message": alert['sms_text'], # Now a dictionary {en, kn}
             "icon": "🚨" if alert['severity'] in ['HIGH', 'CRITICAL'] else "🟢",
             "priority": alert['severity'],
             "color": "#D32F2F" if alert['severity'] in ['HIGH', 'CRITICAL'] else "#4CAF50"
@@ -581,9 +614,8 @@ def build_farmer_response(ml_category, forecast_7day_mm, taluk, geo_confidence, 
                 "en": "Advisory",
                 "kn": "ಸಲಹೆ"
             },
-            "actions": [
-                {"text": alert['whatsapp_text']} # Simplified action list
-            ],
+            "whatsapp_summary": alert['whatsapp_text'], # Now a dictionary {en, kn}
+            "actions": detailed_actions, # detailed structured actions
             "priority_level": alert['severity']
         },
         
