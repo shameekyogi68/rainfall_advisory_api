@@ -48,12 +48,12 @@ def test_dual_language():
                  return False
             print(f"✅ Immediate Action Verified: EN='{first_action['en'][:20]}...', KN='{first_action['kn'][:20]}...'")
             
-        # Check whatsapp summary
-        wa_summary = what_to_do.get("whatsapp_summary", {})
-        if not isinstance(wa_summary, dict) or "en" not in wa_summary or "kn" not in wa_summary:
-            print("FAILED: WhatsApp summary not dual-language")
+        # Check advisory summary
+        summary = what_to_do.get("advisory_summary", {})
+        if not isinstance(summary, dict) or "en" not in summary or "kn" not in summary:
+            print("FAILED: advisory_summary not dual-language")
             return False
-        print(f"✅ WhatsApp Summary Verified")
+        print(f"✅ Advisory Summary Verified")
 
         print("\n🎉 ALL DUAL-LANGUAGE CHECKS PASSED")
         return True

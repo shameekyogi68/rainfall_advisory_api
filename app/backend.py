@@ -589,7 +589,7 @@ def build_farmer_response(ml_category, forecast_7day_mm, taluk, geo_confidence, 
                     "MODERATE_RAIN": "ಸಾಧಾರಣ ಮಳೆ"
                 }.get(alert['type'], alert['type'])
             },
-            "message": alert['sms_text'], # Now a dictionary {en, kn}
+            "message": alert['sms_text'], # Now directly using the dual-language dict from rules.py
             "icon": "🚨" if alert['severity'] in ['HIGH', 'CRITICAL'] else "🟢",
             "priority": alert['severity'],
             "color": "#D32F2F" if alert['severity'] in ['HIGH', 'CRITICAL'] else "#4CAF50"
@@ -614,7 +614,7 @@ def build_farmer_response(ml_category, forecast_7day_mm, taluk, geo_confidence, 
                 "en": "Advisory",
                 "kn": "ಸಲಹೆ"
             },
-            "whatsapp_summary": alert['whatsapp_text'], # Now a dictionary {en, kn}
+            "advisory_summary": alert['whatsapp_text'], # Now a dictionary {en, kn}
             "actions": detailed_actions, # detailed structured actions
             "priority_level": alert['severity']
         },
