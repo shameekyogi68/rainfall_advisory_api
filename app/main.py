@@ -44,6 +44,7 @@ class AdvisoryRequest(BaseModel):
     gps_lat: float
     gps_long: float
     date: str  # Format: YYYY-MM-DD
+    crop: Optional[str] = 'paddy'
     
     @field_validator('gps_lat')
     @classmethod
@@ -374,11 +375,14 @@ async def get_enhanced_advisory(request: Request, advisory_req: AdvisoryRequest)
         # New: Extract history for improved soil moisture est
         history = result.get('technical_details', {}).get('rainfall_history')
         
+        # Handle single crop input (wrap in list for internal compatibility)
+        selected_crop = [advisory_req.crop] if advisory_req.crop else ['paddy']
+
         enhanced = advisor.generate_complete_advisory(
             result,
             lat=advisory_req.gps_lat,
             lon=advisory_req.gps_long,
-            crops=['paddy', 'coconut', 'vegetables'],  # Default Udupi crops
+            crops=selected_crop, 
             rainfall_history=history
         )
         
