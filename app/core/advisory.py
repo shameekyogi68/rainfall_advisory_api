@@ -146,6 +146,81 @@ class AdvisoryService:
         else:  # Normal
             return 'LOW', '🟢', {'en': 'Normal conditions expected', 'kn': 'ಸಾಮಾನ್ಯ ಸ್ಥಿತಿ ನಿರೀಕ್ಷೆ'}
     
+    def estimate_soil_moisture(self, rainfall_history_mm):
+        """
+        Estimate soil moisture using Antecedent Precipitation Index (API)
+        API = Sum(P_t * k^t) where k=0.85 (decay factor)
+        """
+        if not rainfall_history_mm:
+            return 'dry', 0
+            
+        api = 0.0
+        k = 0.85
+        
+        # Calculate API from recent to past (assuming list is ordered by date ascending)
+        # We need reverse order (yesterday, day before...)
+        # Limit to last 7 days for efficiency
+        recent_rain = list(reversed(rainfall_history_mm[-7:]))
+        
+        for i, rain in enumerate(recent_rain):
+            day_ago = i + 1
+            api += rain * (k ** day_ago)
+            
+        # Classification thresholds (approximate for loam/clay soils)
+        if api > 50:
+            return 'saturated', api
+        elif api > 20:
+            return 'wet', api
+        elif api > 10:
+            return 'moist', api
+        elif api > 2:
+            return 'dry', api
+        else:
+            return 'extremely_dry', api
+
+    def get_water_source_advice(self):
+        """Seasonal water source recommendations"""
+        month = datetime.now().month
+        
+        # Summer (Feb-May)
+        if 2 <= month <= 5:
+            if month >= 4:
+                return 'groundwater_stress'
+            return 'groundwater_safe'
+            
+        # Monsoon (June-Sept)
+        elif 6 <= month <= 9:
+            return 'rain_fed'
+            
+        # Post-Monsoon / Winter (Oct-Jan)
+        else:
+            return 'canal'
+
+    def get_quantitative_water_guide(self, crop, category):
+        """
+        Return approximate water quantity per acre
+        Based on crop and current rainfall
+        """
+        # Base requirements (Liters per acre per week)
+        base_needs = {
+            'paddy': 200000,      # ~50mm
+            'areca': 100000,      # ~25mm
+            'coconut': 100000,    # ~25mm
+            'vegetables': 50000,  # ~12.5mm
+            'banana': 80000       # ~20mm
+        }
+        
+        need = base_needs.get(crop, 50000)
+        
+        # Adjust based on rainfall category
+        if category == 'Excess':
+            return 0  # Rain is sufficient
+        elif category == 'Normal':
+            return int(need * 0.5)  # Supplement rain
+        else: # Deficit
+            return need  # Full irrigation
+
+    
     def get_actions_for_excess(self, confidence):
         """Actionable recommendations for excess rainfall"""
         actions = {
@@ -360,6 +435,19 @@ class AdvisoryService:
                 ]
             
             advice[crop] = crop_advice
+            
+            # Add Quantitative Guide (New)
+            liters_per_acre = self.get_quantitative_water_guide(crop, category)
+            if liters_per_acre > 0:
+                advice[crop]['water_quantity'] = {
+                    'liters_per_acre': liters_per_acre,
+                    'desc': {'en': f'Approx {liters_per_acre:,} Liters/Acre this week', 'kn': f'ಈ ವಾರ ಎಕರೆಗೆ ~{liters_per_acre:,} ಲೀಟರ್'}
+                }
+            else:
+                advice[crop]['water_quantity'] = {
+                    'liters_per_acre': 0,
+                    'desc': {'en': 'Rainfall sufficient', 'kn': 'ಮಳೆಯೇ ಸಾಕಾಗುತ್ತದೆ'}
+                }
         
         return advice
     
@@ -676,7 +764,7 @@ class AdvisoryService:
         
         return decisions
     
-    def generate_complete_advisory(self, prediction_result, lat, lon, crops=None):
+    def generate_complete_advisory(self, prediction_result, lat, lon, crops=None, rainfall_history=None):
         """Generate complete farmer advisory with all features"""
         
         if prediction_result['status'] != 'success':
@@ -729,6 +817,12 @@ class AdvisoryService:
         
         # Get quick decisions
         quick_decisions = self.get_quick_decisions(forecast_7day, category)
+
+        # Get Soil Moisture
+        sm_status, sm_index = self.estimate_soil_moisture(rainfall_history)
+        
+        # Get Water Source Advice
+        water_source_key = self.get_water_source_advice()
         
         # Build complete advisory
         advisory = {
@@ -748,7 +842,12 @@ class AdvisoryService:
             'actions': actions,
             'crop_advice': crop_advice,
             'prediction_confidence': confidence_stats,
-            'generated_at': datetime.now().isoformat()
+            'generated_at': datetime.now().isoformat(),
+            'soil_moisture': {
+                'status': sm_status,
+                'index': round(sm_index, 1)
+            },
+            'water_source': water_source_key
         }
         
         return advisory

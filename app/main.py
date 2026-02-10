@@ -369,12 +369,17 @@ async def get_enhanced_advisory(request: Request, advisory_req: AdvisoryRequest)
              raise HTTPException(status_code=400, detail=result.get('error', {}).get('message', 'Prediction failed'))
         
         # Generate enhanced advisory
-        advisor = FarmerAdvisory()
+        advisor = AdvisoryService()
+        
+        # New: Extract history for improved soil moisture est
+        history = result.get('technical_details', {}).get('rainfall_history')
+        
         enhanced = advisor.generate_complete_advisory(
             result,
             lat=advisory_req.gps_lat,
             lon=advisory_req.gps_long,
-            crops=['paddy', 'coconut', 'vegetables']  # Default Udupi crops
+            crops=['paddy', 'coconut', 'vegetables'],  # Default Udupi crops
+            rainfall_history=history
         )
         
         # Combine with original prediction

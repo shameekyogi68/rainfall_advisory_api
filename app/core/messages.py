@@ -240,7 +240,51 @@ FARMER_MESSAGES = {
         "pesticide": {"en": "Pesticide", "kn": "ಕೀಟನಾಶಕ"},
         "irrigation": {"en": "Irrigation", "kn": "ನೀರಾವರಿ"},
         "drainage": {"en": "Drainage", "kn": "ಬಸಿಗಾಲುವೆ/ಚರಂಡಿ"},
-        "harvest": {"en": "Harvest", "kn": "ಕಟಾವು"}
+        "harvest": {"en": "Harvest", "kn": "कಟಾವು"}
+    },
+    
+    # === SOIL MOISTURE STATUS ===
+    "soil_moisture": {
+        "saturated": {
+            "title": {"en": "Saturated", "kn": "ಸಂಪೂರ್ಣ ಒದ್ದೆ (ರಾಡಿ)"},
+            "desc": {"en": "Soil is full of water. Do not irrigate.", "kn": "ಮಣ್ಣಿನಲ್ಲಿ ನೀರು ತುಂಬಿದೆ. ನೀರು ಹಾಯಿಸಬೇಡಿ."}
+        },
+        "wet": {
+            "title": {"en": "Wet", "kn": "ತೇವಾಂಶವಿದೆ"},
+            "desc": {"en": "Sufficient moisture. No irrigation needed.", "kn": "ಸಾಕಷ್ಟು ತೇವಾಂಶವಿದೆ. ನೀರು ಹಾಯಿಸುವುದು ಬೇಡ."}
+        },
+        "moist": {
+            "title": {"en": "Moist", "kn": "ಹದವಾಗಿದೆ"},
+            "desc": {"en": "Optimum moisture for crops.", "kn": "ಬೆಳೆಗಳಿಗೆ ಬೇಕಾದಷ್ಟು ಹದವಾಗಿದೆ."}
+        },
+        "dry": {
+            "title": {"en": "Dry", "kn": "ಒಣಗಿದೆ"},
+            "desc": {"en": "Top soil is dry. Irrigation recommended.", "kn": "ಮೇಲ್ಮಣ್ಣು ಒಣಗಿದೆ. ನೀರು ಹಾಯಿಸುವುದು ಒಳ್ಳೆಯದು."}
+        },
+        "extremely_dry": {
+            "title": {"en": "Critical Dry", "kn": "ತುಂಬಾ ಒಣಗಿದೆ"},
+            "desc": {"en": "Deep soil moisture low. Urgent irrigation needed.", "kn": "ತೀರಾ ಒಣಗಿದೆ. ತುರ್ತಾಗಿ ನೀರು ಹಾಯಿಸಿ."}
+        }
+    },
+
+    # === WATER SOURCE ADVICE ===
+    "water_source": {
+        "rain_fed": {
+            "title": {"en": "Rain Fed", "kn": "ಮಳೆ ಆಧಾರಿತ"},
+            "advice": {"en": "Store rainwater in farm ponds.", "kn": "ಕೃಷಿ ಹೊಂಡದಲ್ಲಿ ಮಳೆ ನೀರು ಸಂಗ್ರಹಿಸಿ."}
+        },
+        "groundwater_safe": {
+            "title": {"en": "Groundwater Safe", "kn": "ಅಂತರ್ಜಲ ಸುರಕ್ಷಿತ"},
+            "advice": {"en": "Use borewell/open well judiciously.", "kn": "ಬೋರ್‌ವೆಲ್ ನೀರನ್ನು ಮಿತವಾಗಿ ಬಳಸಿ."}
+        },
+        "groundwater_stress": {
+            "title": {"en": "Groundwater Low", "kn": "ಅಂತರ್ಜಲ ಕುಸಿತ"},
+            "advice": {"en": "Prioritize critical crops only.", "kn": "ಮುಖ್ಯ ಬೆಳೆಗಳಿಗೆ ಮಾತ್ರ ನೀರು ಕೊಡಿ."}
+        },
+        "canal": {
+            "title": {"en": "Canal Available", "kn": "ಕಾಲುವೆ ನೀರು ಲಭ್ಯ"},
+            "advice": {"en": "Follow rotation schedule.", "kn": "ವಾರಬಂದಿ ಪದ್ಧತಿ ಅನುಸರಿಸಿ."}
+        }
     }
 }
 

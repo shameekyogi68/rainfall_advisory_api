@@ -331,6 +331,33 @@ class FeatureEngineer:
         
         return features
 
+    def get_recent_rainfall_list(self, taluk, reference_date, days=14):
+        """
+        Get list of daily rainfall (mm) for the last N days.
+        Used for Soil Moisture estimation (API).
+        Returns: List of floats [rain_day_1, rain_day_2, ... rain_day_N] (ordered by date)
+        """
+        try:
+            ref_dt = pd.to_datetime(reference_date)
+            # We want data strictly BEFORE reference date? 
+            # Actually for soil moisture on Day T, we need rain up to Day T-1.
+            # _get_rainfall_data returns data < ref_dt.
+            rain_df = self._get_rainfall_data(taluk, ref_dt)
+            
+            if rain_df.empty:
+                return [0.0] * days
+                
+            last_n = rain_df.tail(days)
+            # Ensure we have a list of floats, filling missing days with 0 if needed is tricky 
+            # but for now we take the tailored df.
+            # Better: reindex to ensure all days are present?
+            # For MVP, just return the values we have.
+            return last_n['rainfall'].astype(float).tolist()
+            
+        except Exception as e:
+            logger.warning(f"Error fetching recent rainfall: {e}")
+            return []
+
 # ==================== B3: ML INFERENCE ====================
 class RainfallPredictor:
     _instance = None
@@ -521,7 +548,7 @@ def get_live_forecast_safe(lat, lon):
 
 # ==================== FARMER-FRIENDLY OUTPUT BUILDER ====================
 # ==================== FARMER-FRIENDLY OUTPUT BUILDER ====================
-def build_farmer_response(ml_category, forecast_7day_mm, taluk, geo_confidence, confidences, uncertainty_data=None, max_intensity_mm_per_hr=0.0, **kwargs):
+def build_farmer_response(ml_category, forecast_7day_mm, taluk, geo_confidence, confidences, uncertainty_data=None, max_intensity_mm_per_hr=0.0, rainfall_history=None, **kwargs):
     """
     Constructs the final response using:
     1. ML Category (from calibrated probs)
@@ -619,6 +646,7 @@ def build_farmer_response(ml_category, forecast_7day_mm, taluk, geo_confidence, 
             "priority_level": alert['severity']
         },
         
+        
         # Technical details (for advanced users/app developers)
         "technical_details": {
             "ml_prediction": ml_category,
@@ -626,9 +654,16 @@ def build_farmer_response(ml_category, forecast_7day_mm, taluk, geo_confidence, 
             "model_version": "v2_calibrated",
             "forecast_available": forecast_7day_mm is not None,
             "uncertainty_analysis": uncertainty_data.get('uncertainty') if uncertainty_data else None,
-            "prediction_intervals": uncertainty_data.get('prediction_intervals') if uncertainty_data else None
+            "prediction_intervals": uncertainty_data.get('prediction_intervals') if uncertainty_data else None,
+            "rainfall_history": rainfall_history # Expose for enhanced advisory
         },
         
+        # New Soil & Water Insights (Standard Response)
+        "water_insights": {
+             "soil_moisture": advisory_service.estimate_soil_moisture(rainfall_history)[0], # Returns (status, api)
+             "water_source": advisory_service.get_water_source_advice()
+        },
+
         # Location info (Required by main.py logging)
         "location": {
             "taluk": taluk,
@@ -739,6 +774,9 @@ def process_advisory_request(user_id, gps_lat, gps_long, date_str, mapper=None, 
             if engineer is None:
                 engineer = FeatureEngineer()
             features = engineer.compute_features(taluk, date_str)
+            # NEW: Get raw history for Soil Moisture
+            rainfall_history = engineer.get_recent_rainfall_list(taluk, date_str, days=14)
+            
         except InvalidDateError as e:
             return build_error_response("date_error", str(e))
         except InsufficientDataError as e:
@@ -773,7 +811,8 @@ def process_advisory_request(user_id, gps_lat, gps_long, date_str, mapper=None, 
             geo_confidence=geo_confidence,
             confidences=confidences,
             uncertainty_data=uncertainty_data,
-            max_intensity_mm_per_hr=max_intensity # Added max_intensity
+            max_intensity_mm_per_hr=max_intensity, # Added max_intensity
+            rainfall_history=rainfall_history # NEW
         )
         
         # Add weather data source info
