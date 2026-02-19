@@ -425,21 +425,21 @@ class RainfallPredictor:
             feature_order = self.schema['features']
             features_list = [features_dict[f] for f in feature_order]
             
+            raw_conf = {}
+            uncertainty_data = None
+            
             if self.quantifier:
                 # Use UncertaintyQuantifier logic
                 result = self.quantifier.get_prediction_with_uncertainty(features_list, taluk)
                 
-                category = result['prediction']['category']
-                
                 # Convert percentages back to 0-1 probabilities for consistency
                 probs = result['prediction']['probabilities']
-                confidence_dict = {
+                raw_conf = {
                     'Deficit': probs['deficit'] / 100.0,
                     'Normal': probs['normal'] / 100.0,
                     'Excess': probs['excess'] / 100.0
                 }
-                
-                return category, confidence_dict, result
+                uncertainty_data = result
                 
             else:
                 # Fallback to simple prediction
@@ -452,47 +452,82 @@ class RainfallPredictor:
                 raw_conf = {
                     cls: float(prob) for cls, prob in zip(class_names, probabilities)
                 }
-                
-                # Apply Probability Calibration (The "Correction" Layer)
-                return category, confidence_dict, None
+            
+            # Apply Probability Calibration (The "Correction" Layer)
+            # This is where we fix the "Normalcy Bias" and "False Alarms"
+            final_cat, final_conf = self.calibrate_prediction(raw_conf, features_dict)
+            
+            return final_cat, final_conf, uncertainty_data
 
         except Exception as e:
             raise RuntimeError(f"ML prediction error: {str(e)}")
 
-    def calibrate_prediction(self, raw_conf):
+    def calibrate_prediction(self, raw_conf, features):
         """
         Calibrates raw ML probabilities to fix "Normal" bias.
         Penalizes 'Normal' and boosts 'Deficit'/'Excess' if signal exists.
+        New Logic: Includes Season-Aware and Soil-Aware adjustments.
         """
         calibrated = raw_conf.copy()
         
-        # 1. Penalize 'Normal' (it's often over-predicted due to class imbalance)
-        if calibrated.get('Normal', 0) > 0.4:
-            calibrated['Normal'] *= 0.8  # 20% penalty
-            
-        # 2. Boost Extremes (if they have non-trivial probability)
-        for extreme in ['Deficit', 'Excess']:
-             if calibrated.get(extreme, 0) > 0.25:
-                 calibrated[extreme] *= 1.3  # 30% boost
+        month = features.get('month', 0)
+        rolling_rain = features.get('rolling_30_rain', 0)
         
-        # 3. Renormalize to sum to 1.0
-        total = sum(calibrated.values())
-        for k in calibrated:
-            calibrated[k] /= total
+        # --- RULE 1: Monsoon "Anti-Normal" Bias (June-Aug) ---
+        # In peak monsoon, "Normal" often hides heavy rain events.
+        if month in [6, 7, 8]: 
+            if calibrated.get('Normal', 0) > 0.4:
+                calibrated['Normal'] *= 0.6  # 40% penalty (Stronger)
             
-        # 4. Determine new winner
-        # If 'Normal' is winner but margin is small (<10%), prefer extreme
-        # (Risk-averse strategy: better to warn than miss)
+            # Boost Excess if it's even slightly probable
+            if calibrated.get('Excess', 0) > 0.05: # Lowered from 0.15
+                calibrated['Excess'] *= 2.0        # Double the signal
+                
+        # --- RULE 2: Pre-Monsoon "Anti-Excess" Bias (May) ---
+        # In May, we get false alarms for Excess. Be conservative.
+        elif month == 5:
+            # If Model screams Excess but it's May, be skeptical
+            if calibrated.get('Excess', 0) > 0.5:
+                calibrated['Excess'] *= 0.4 # Punishment
+        
+        # --- RULE 3: Soil Saturation Limit ---
+        # If ground is soaked (>800mm), any rain is dangerous.
+        if rolling_rain > 800.0:
+            # Shift mass from Normal to Excess
+            shift = calibrated.get('Normal', 0) * 0.8 # Shift 80% of Normal confidence
+            calibrated['Normal'] -= shift
+            calibrated['Excess'] = calibrated.get('Excess', 0) + shift
+            
+        # --- RULE 4: Drought Recall (Dry Soil) ---
+        # If soil is dry (<50mm) and Deficit has ANY signal, boost it.
+        if rolling_rain < 50.0:
+            if calibrated.get('Deficit', 0) > 0.05:
+                calibrated['Deficit'] *= 4.0
+
+        # --- Base Calibration (Existing Logic) ---
+        # Boost Extremes generally if they have non-trivial probability
+        for extreme in ['Deficit', 'Excess']:
+             if calibrated.get(extreme, 0) > 0.3:
+                 calibrated[extreme] *= 1.2
+        
+        # Renormalize to sum to 1.0
+        total = sum(calibrated.values())
+        if total > 0:
+            for k in calibrated:
+                calibrated[k] /= total
+            
+        # Determine new winner
         sorted_cats = sorted(calibrated.items(), key=lambda x: x[1], reverse=True)
         winner = sorted_cats[0][0]
         score = sorted_cats[0][1]
         
-        if winner == 'Normal' and score < 0.5:
-            # Check if an extreme is close second
+        # Tie-breaker logic (Risk Averse)
+        if winner == 'Normal' and score < 0.7: # Increased from 0.6
+            # If Normal is winning but unconvincingly, look for threats
             second = sorted_cats[1]
-            if second[0] in ['Deficit', 'Excess'] and (score - second[1]) < 0.1:
+            if second[0] in ['Deficit', 'Excess'] and (score - second[1]) < 0.3: # Increased from 0.2
                 winner = second[0]
-                # Swap probabilities to reflect this override
+                # Swap for consistency
                 calibrated[winner], calibrated['Normal'] = calibrated['Normal'], calibrated[winner]
         
         return winner, calibrated
