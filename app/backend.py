@@ -815,7 +815,7 @@ def process_advisory_request(user_id, gps_lat, gps_long, date_str, mapper=None, 
                 mapper = TalukMapper()
             taluk, geo_confidence = mapper.get_taluk(gps_lat, gps_long)
         except GPSOutOfBoundsError as e:
-            return localize_payload(build_error_response("gps_error", str(e)), language)
+            return build_error_response("gps_error", str(e))
         
         # Step 2: Compute Features (B2 + B5)
         try:
@@ -826,9 +826,9 @@ def process_advisory_request(user_id, gps_lat, gps_long, date_str, mapper=None, 
             rainfall_history = engineer.get_recent_rainfall_list(taluk, date_str, days=14)
             
         except InvalidDateError as e:
-            return localize_payload(build_error_response("date_error", str(e)), language)
+            return build_error_response("date_error", str(e))
         except InsufficientDataError as e:
-            return localize_payload(build_error_response("data_error", str(e)), language)
+            return build_error_response("data_error", str(e))
         
         # Step 3: ML Prediction (B3)
         try:
@@ -837,7 +837,7 @@ def process_advisory_request(user_id, gps_lat, gps_long, date_str, mapper=None, 
             ml_category, confidences, uncertainty_data = predictor.predict(features, taluk)
         except Exception as e:
             logger.error(f"ML prediction failed: {e}")
-            return localize_payload(build_error_response("system_error", "Prediction system error"), language)
+            return build_error_response("system_error", "Prediction system error")
         
         # Step 4: Live Weather (B6)
         live_rain, max_intensity, weather_status, weather_error = get_live_forecast_safe(gps_lat, gps_long)
@@ -871,12 +871,13 @@ def process_advisory_request(user_id, gps_lat, gps_long, date_str, mapper=None, 
         }
         
         
-        return localize_payload(response, language)
+        
+        return response
         
     except Exception as e:
         # Catch-all for unexpected errors
         logger.error(f"Unexpected error in advisory request: {e}", exc_info=True)
-        return localize_payload(build_error_response("system_error", str(e), user_friendly=True), language)
+        return build_error_response("system_error", str(e), user_friendly=True)
 
 # ==================== TESTING ====================
 if __name__ == "__main__":

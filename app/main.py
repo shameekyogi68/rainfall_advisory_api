@@ -251,11 +251,11 @@ def get_performance_stats():
     }
 
 @app.post("/get-advisory")
-@limiter.limit("10/minute")  # Rate limit: 10 requests per minute per IP
+@limiter.limit("100/minute")  # Rate limit: 100 requests per minute per IP
 async def get_advisory(request: Request, advisory_request: AdvisoryRequest):
     """
     Main endpoint: Returns rainfall prediction and farmer advisory.
-    Rate limited to 10 requests/minute per IP.
+    Rate limited to 100 requests/minute per IP.
     """
     start_time = datetime.now()
     
@@ -273,6 +273,9 @@ async def get_advisory(request: Request, advisory_request: AdvisoryRequest):
             predictor=getattr(request.app.state, 'predictor', None),
             language=advisory_request.language
         )
+        
+        from app.backend import localize_payload
+        result = localize_payload(result, advisory_request.language)
         
         if result['status'] == 'error':
             logger.error(f"Advisory processing error: {result.get('message')}")
@@ -350,7 +353,7 @@ async def get_advisory(request: Request, advisory_request: AdvisoryRequest):
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 @app.post("/get-enhanced-advisory", response_model=dict)
-@limiter.limit("60/minute")
+@limiter.limit("100/minute")
 async def get_enhanced_advisory(request: Request, advisory_req: AdvisoryRequest):
     """
     Enhanced Farmer Advisory with 7-day weather forecast and crop advice.
@@ -397,7 +400,8 @@ async def get_enhanced_advisory(request: Request, advisory_req: AdvisoryRequest)
             'api_version': '1.2'
         }
         
-        return enhanced_result
+        from app.backend import localize_payload
+        return localize_payload(enhanced_result, advisory_req.language)
         
     except HTTPException:
         raise

@@ -617,25 +617,25 @@ class AdvisoryService:
                 'day': day_name,
                 'date': day['date'],
                 'morning': {
-                    'time': '6am-12pm',
+                    'time': {'en': '6am-12pm', 'kn': 'ಬೆಳಿಗ್ಗೆ 6-12'},
                     'rain': f'{morning_rain:.1f}mm',
                     'temp': f'{morning_temp:.0f}°C',
                     'suitable_for_work': morning_rain < 5 and morning_temp < 32,
-                    'recommendation': 'Good for irrigation' if morning_rain < 2 else 'Avoid fieldwork'
+                    'recommendation': {'en': 'Good for irrigation', 'kn': 'ನೀರಾವರಿಗೆ ಸೂಕ್ತ ಸಮಯ'} if morning_rain < 2 else {'en': 'Avoid fieldwork', 'kn': 'ಹೊಲದ ಕೆಲಸ ಬೇಡ'}
                 },
                 'afternoon': {
-                    'time': '12pm-6pm',
+                    'time': {'en': '12pm-6pm', 'kn': 'ಮಧ್ಯಾಹ್ನ 12-6'},
                     'rain': f'{afternoon_rain:.1f}mm',
                     'temp': f'{afternoon_temp:.0f}°C',
                     'suitable_for_work': afternoon_rain < 5 and afternoon_temp < 35,
-                    'recommendation': 'Too hot - rest' if afternoon_temp > 33 else 'Can work if needed'
+                    'recommendation': {'en': 'Too hot - rest', 'kn': 'ಅತಿಯಾದ ಬಿಸಿಲು - ವಿಶ್ರಾಂತಿ ಪಡೆಯಿರಿ'} if afternoon_temp > 33 else {'en': 'Can work if needed', 'kn': 'ಅಗತ್ಯವಿದ್ದರೆ ಕೆಲಸ ಮಾಡಬಹುದು'}
                 },
                 'evening': {
-                    'time': '6pm-10pm',
+                    'time': {'en': '6pm-10pm', 'kn': 'ಸಂಜೆ 6-10'},
                     'rain': f'{evening_rain:.1f}mm',
                     'temp': f'{evening_temp:.0f}°C',
                     'suitable_for_work': evening_rain < 5,
-                    'recommendation': 'Good for fertilizer' if evening_rain < 2 else 'Rain likely'
+                    'recommendation': {'en': 'Good for fertilizer', 'kn': 'ಗೊಬ್ಬರ ಹಾಕಲು ಸೂಕ್ತ ಸಮಯ'} if evening_rain < 2 else {'en': 'Rain likely', 'kn': 'ಮಳೆ ಸಂಭವವಿದೆ'}
                 }
             })
         
@@ -659,106 +659,106 @@ class AdvisoryService:
         # Can fertilize today?
         if rain_today < 2 and rain_tomorrow < 5:
             decisions['can_fertilize_today'] = {
-                'answer': 'YES ✅',
-                'reason': f'No rain today, minimal rain tomorrow ({rain_tomorrow:.0f}mm)',
+                'answer': {'en': 'YES ✅', 'kn': 'ಹೌದು ✅'},
+                'reason': {'en': f'No rain today, minimal rain tomorrow ({rain_tomorrow:.0f}mm)', 'kn': f'ಇಂದು ಮಳೆ ಇಲ್ಲ, ನಾಳೆಯೂ ಕಡಿಮೆ ಮಳೆ ({rain_tomorrow:.0f}mm)'},
                 'confidence': 'HIGH'
             }
         elif rain_today < 5:
             decisions['can_fertilize_today'] = {
-                'answer': 'MAYBE 🟡',
-                'reason': f'Light rain possible ({rain_today:.0f}mm) - watch forecast',
+                'answer': {'en': 'MAYBE 🟡', 'kn': 'ಬಹುಶಃ 🟡'},
+                'reason': {'en': f'Light rain possible ({rain_today:.0f}mm) - watch forecast', 'kn': f'ಸಣ್ಣ ಮಳೆ ಸಾಧ್ಯತೆ ({rain_today:.0f}mm) - ಮುನ್ಸೂಚನೆ ಗಮನಿಸಿ'},
                 'confidence': 'MEDIUM'
             }
         else:
             decisions['can_fertilize_today'] = {
-                'answer': 'NO ❌',
-                'reason': f'Rain expected ({rain_today:.0f}mm) - fertilizer will wash away',
+                'answer': {'en': 'NO ❌', 'kn': 'ಬೇಡ ❌'},
+                'reason': {'en': f'Rain expected ({rain_today:.0f}mm) - fertilizer will wash away', 'kn': f'ಮಳೆ ನಿರೀಕ್ಷೆಯಿದೆ ({rain_today:.0f}mm) - ಗೊಬ್ಬರ ತೊಳೆದು ಹೋಗಬಹುದು'},
                 'confidence': 'HIGH'
             }
         
         # Can irrigate today?
         if rain_today < 2 and category in ['Deficit', 'Normal']:
             decisions['can_irrigate_today'] = {
-                'answer': 'YES ✅',
-                'reason': 'Dry conditions, crops need water',
+                'answer': {'en': 'YES ✅', 'kn': 'ಹೌದು ✅'},
+                'reason': {'en': 'Dry conditions, crops need water', 'kn': 'ಒಣ ಹವೆ, ಬೆಳೆಗಳಿಗೆ ನೀರು ಬೇಕು'},
                 'confidence': 'HIGH'
             }
         elif rain_today > 10:
             decisions['can_irrigate_today'] = {
-                'answer': 'NO ❌',
-                'reason': f'Heavy rain ({rain_today:.0f}mm) - natural irrigation sufficient',
+                'answer': {'en': 'NO ❌', 'kn': 'ಬೇಡ ❌'},
+                'reason': {'en': f'Heavy rain ({rain_today:.0f}mm) - natural irrigation sufficient', 'kn': f'ಭಾರೀ ಮಳೆ ({rain_today:.0f}mm) - ಮಳೆಯೇ ಸಾಕಾಗುತ್ತದೆ'},
                 'confidence': 'HIGH'
             }
         else:
             decisions['can_irrigate_today'] = {
-                'answer': 'MAYBE 🟡',
-                'reason': 'Check soil moisture first',
+                'answer': {'en': 'MAYBE 🟡', 'kn': 'ಬಹುಶಃ 🟡'},
+                'reason': {'en': 'Check soil moisture first', 'kn': 'ಮೊದಲು ಮಣ್ಣಿನ ತೇವಾಂಶ ಪರೀಕ್ಷಿಸಿ'},
                 'confidence': 'MEDIUM'
             }
         
         # Can harvest today?
         if rain_today < 2:
             decisions['can_harvest_today'] = {
-                'answer': 'YES ✅',
-                'reason': 'Dry conditions good for harvesting',
+                'answer': {'en': 'YES ✅', 'kn': 'ಹೌದು ✅'},
+                'reason': {'en': 'Dry conditions good for harvesting', 'kn': 'ಒಣ ಹವೆ ಕಟಾವಿಗೆ ಉತ್ತಮವಾಗಿದೆ'},
                 'confidence': 'HIGH'
             }
         elif rain_today > 10:
             decisions['can_harvest_today'] = {
-                'answer': 'NO ❌',
-                'reason': f'Heavy rain ({rain_today:.0f}mm) - crops will be wet',
+                'answer': {'en': 'NO ❌', 'kn': 'ಬೇಡ ❌'},
+                'reason': {'en': f'Heavy rain ({rain_today:.0f}mm) - crops will be wet', 'kn': f'ಭಾರೀ ಮಳೆ ({rain_today:.0f}mm) - ಬೆಳೆ ಒದ್ದೆಯಾಗಬಹುದು'},
                 'confidence': 'HIGH'
             }
         else:
             decisions['can_harvest_today'] = {
-                'answer': 'MAYBE 🟡',
-                'reason': 'Harvest in morning before rain',
+                'answer': {'en': 'MAYBE 🟡', 'kn': 'ಬಹುಶಃ 🟡'},
+                'reason': {'en': 'Harvest in morning before rain', 'kn': 'ಮಳೆ ಬರುವ ಮುನ್ನ ಬೆಳಿಗ್ಗೆ ಕಟಾವು ಮಾಡಿ'},
                 'confidence': 'MEDIUM'
             }
         
         # Can spray pesticide/fungicide today?
         if rain_today < 2 and rain_tomorrow < 5 and temp_today < 35:
             decisions['can_spray_today'] = {
-                'answer': 'YES ✅',
-                'reason': 'Good conditions - no rain, temperature OK',
+                'answer': {'en': 'YES ✅', 'kn': 'ಹೌದು ✅'},
+                'reason': {'en': 'Good conditions - no rain, temperature OK', 'kn': 'ಉತ್ತಮ ವಾತಾವರಣ - ಮಳೆ ಇಲ್ಲ, ಉಷ್ಣಾಂಶ ಸರಿಯಾಗಿದೆ'},
                 'confidence': 'HIGH'
             }
         elif rain_today > 5 or rain_tomorrow > 10:
             decisions['can_spray_today'] = {
-                'answer': 'NO ❌',
-                'reason': 'Rain will wash away spray',
+                'answer': {'en': 'NO ❌', 'kn': 'ಬೇಡ ❌'},
+                'reason': {'en': 'Rain will wash away spray', 'kn': 'ಮಳೆ ಔಷಧಿಯನ್ನು ತೊಳೆದು ಹಾಕಬಹುದು'},
                 'confidence': 'HIGH'
             }
         else:
             decisions['can_spray_today'] = {
-                'answer': 'MAYBE 🟡',
-                'reason': 'Spray early morning, check rain forecast',
+                'answer': {'en': 'MAYBE 🟡', 'kn': 'ಬಹುಶಃ 🟡'},
+                'reason': {'en': 'Spray early morning, check rain forecast', 'kn': 'ಬೆಳಿಗ್ಗೆ ಸಿಂಪಡಿಸಿ, ಮಳೆ ಮುನ್ಸೂಚನೆ ಗಮನಿಸಿ'},
                 'confidence': 'MEDIUM'
             }
         
         # Can plant new crops today?
         if category == 'Normal' and rain_today < 10:
             decisions['can_plant_today'] = {
-                'answer': 'YES ✅',
-                'reason': 'Good soil moisture, normal conditions',
+                'answer': {'en': 'YES ✅', 'kn': 'ಹೌದು ✅'},
+                'reason': {'en': 'Good soil moisture, normal conditions', 'kn': 'ಮಣ್ಣಿನಲ್ಲಿ ಉತ್ತಮ ತೇವಾಂಶವಿದೆ, ಸಾಮಾನ್ಯ ಹವಾಮಾನ'},
                 'confidence': 'HIGH'
             }
         elif category == 'Deficit' and rain_today < 2:
             decisions['can_plant_today'] = {
-                'answer': 'NO ❌',
-                'reason': 'Too dry - new plants may not survive',
+                'answer': {'en': 'NO ❌', 'kn': 'ಬೇಡ ❌'},
+                'reason': {'en': 'Too dry - new plants may not survive', 'kn': 'ಬಹಳ ಒಣಗಿದೆ - ಹೊಸ ಸಸಿಗಳು ಬದುಕಲಾರವು'},
                 'confidence': 'HIGH'
             }
         elif category == 'Excess' or rain_today > 20:
             decisions['can_plant_today'] = {
-                'answer': 'NO ❌',
-                'reason': 'Too wet - waterlogging risk',
+                'answer': {'en': 'NO ❌', 'kn': 'ಬೇಡ ❌'},
+                'reason': {'en': 'Too wet - waterlogging risk', 'kn': 'ಬಹಳ ತೇವವಿದೆ - ಸಸಿ ಕೊಳೆಯಬಹುದು'},
                 'confidence': 'HIGH'
             }
         else:
             decisions['can_plant_today'] = {
-                'answer': 'MAYBE 🟡',
-                'reason': 'Monitor soil conditions',
+                'answer': {'en': 'MAYBE 🟡', 'kn': 'ಬಹುಶಃ 🟡'},
+                'reason': {'en': 'Monitor soil conditions', 'kn': 'ಮಣ್ಣಿನ ಹದವನ್ನು ಗಮನಿಸಿ'},
                 'confidence': 'MEDIUM'
             }
         
