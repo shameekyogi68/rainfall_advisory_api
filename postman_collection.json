@@ -252,7 +252,7 @@
     "variable": [
         {
             "key": "base_url",
-            "value": "https://rainfall-advisory-api.onrender.com",
+            "value": "https://rainfall-advisory-api-1.onrender.com",
             "type": "string"
         }
     ]
