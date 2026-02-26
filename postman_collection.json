@@ -62,7 +62,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"user_id\": \"test_farmer_1\",\n    \"gps_lat\": 13.3409,\n    \"gps_long\": 74.7421,\n    \"date\": \"2023-10-25\"\n}"
+                            "raw": "{\n    \"user_id\": \"test_farmer_1\",\n    \"gps_lat\": 13.3409,\n    \"gps_long\": 74.7421,\n    \"date\": \"2023-10-25\",\n    \"language\": \"en\"\n}"
                         },
                         "url": {
                             "raw": "{{base_url}}/get-advisory",
@@ -73,7 +73,34 @@
                                 "get-advisory"
                             ]
                         },
-                        "description": "Main endpoint. Returns rainfall prediction and advisory for a valid location in Udupi."
+                        "description": "Main endpoint. Returns rainfall prediction and advisory for a valid location in Udupi (English)."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "3a. Get Advisory (Kannada)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"user_id\": \"test_farmer_kn\",\n    \"gps_lat\": 13.3409,\n    \"gps_long\": 74.7421,\n    \"date\": \"2023-10-25\",\n    \"language\": \"kn\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/get-advisory",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "get-advisory"
+                            ]
+                        },
+                        "description": "Main endpoint. Returns rainfall prediction and advisory in Kannada."
                     },
                     "response": []
                 },
