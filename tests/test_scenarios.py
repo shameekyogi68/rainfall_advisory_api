@@ -70,7 +70,10 @@ class TestSafetyLogic(unittest.TestCase):
         # Before: Normal=0.45, Deficit=0.35, Excess=0.2
         raw_conf = {'Normal': 0.45, 'Deficit': 0.35, 'Excess': 0.2}
         
-        cat, final_conf = predictor.calibrate_prediction(raw_conf)
+        # PROVIDE MOCK FEATURES: Neutral month (e.g., 1=Jan) and neutral rain (e.g., 200mm)
+        features = {'month': 1, 'rolling_30_rain': 200.0}
+        
+        cat, final_conf = predictor.calibrate_prediction(raw_conf, features)
         
         # After penalty (Normal*0.8 = 0.36) and boost (Deficit*1.3 = 0.455)
         # Deficit should win

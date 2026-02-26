@@ -42,20 +42,20 @@ logger = logging.getLogger("rainfall_api")
 # ==================== REQUEST MODELS ====================
 class AdvisoryRequest(BaseModel):
     user_id: str
-    gps_lat: float
-    gps_long: float
+    latitude: float
+    longitude: float
     date: str  # Format: YYYY-MM-DD
     crop: Optional[str] = 'paddy'
     language: Optional[str] = 'en'  # 'en' or 'kn'
     
-    @field_validator('gps_lat')
+    @field_validator('latitude')
     @classmethod
     def validate_latitude(cls, v):
         if not (12.5 <= v <= 14.5):
             raise ValueError('GPS latitude out of Udupi district range (12.5-14.5)')
         return v
     
-    @field_validator('gps_long')
+    @field_validator('longitude')
     @classmethod
     def validate_longitude(cls, v):
         if not (74.4 <= v <= 75.3):
@@ -265,8 +265,8 @@ async def get_advisory(request: Request, advisory_request: AdvisoryRequest):
         # Dependency Injection for Performance
         result = process_advisory_request(
             advisory_request.user_id,
-            advisory_request.gps_lat,
-            advisory_request.gps_long,
+            advisory_request.latitude,
+            advisory_request.longitude,
             advisory_request.date,
             mapper=getattr(request.app.state, 'mapper', None),
             engineer=getattr(request.app.state, 'engineer', None),
@@ -331,7 +331,7 @@ async def get_advisory(request: Request, advisory_request: AdvisoryRequest):
         prediction_log_entry = {
             "timestamp": datetime.now().isoformat(),
             "user_id": advisory_request.user_id,
-            "gps": f"{advisory_request.gps_lat},{advisory_request.gps_long}",
+            "gps": f"{advisory_request.latitude},{advisory_request.longitude}",
             "taluk": taluk_name,
             "prediction": main_prediction,
             "alert_sent": alert_shown,
@@ -362,8 +362,8 @@ async def get_enhanced_advisory(request: Request, advisory_req: AdvisoryRequest)
         # Get basic prediction
         result = process_advisory_request(
             advisory_req.user_id,
-            advisory_req.gps_lat,
-            advisory_req.gps_long,
+            advisory_req.latitude,
+            advisory_req.longitude,
             advisory_req.date,
             mapper=getattr(request.app.state, 'mapper', None),
             engineer=getattr(request.app.state, 'engineer', None),
@@ -387,8 +387,8 @@ async def get_enhanced_advisory(request: Request, advisory_req: AdvisoryRequest)
 
         enhanced = advisor.generate_complete_advisory(
             result,
-            lat=advisory_req.gps_lat,
-            lon=advisory_req.gps_long,
+            lat=advisory_req.latitude,
+            lon=advisory_req.longitude,
             crops=selected_crop, 
             rainfall_history=history
         )
