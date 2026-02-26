@@ -46,6 +46,7 @@ class AdvisoryRequest(BaseModel):
     gps_long: float
     date: str  # Format: YYYY-MM-DD
     crop: Optional[str] = 'paddy'
+    language: Optional[str] = 'en'  # 'en' or 'kn'
     
     @field_validator('gps_lat')
     @classmethod
@@ -208,12 +209,12 @@ def get_metrics():
             total_predictions = 0
         
         # Get drift summary
-        from .monitoring.drift import get_drift_detector
+        from app.monitoring.drift import get_drift_detector
         drift_detector = get_drift_detector()
         drift_summary = drift_detector.get_drift_summary(last_n_hours=24)
         
         # Get performance metrics
-        from .monitoring.quality import get_performance_tracker
+        from app.monitoring.quality import get_performance_tracker
         tracker = get_performance_tracker()
         perf_metrics = tracker.get_latest_metrics()
         
@@ -233,7 +234,7 @@ def get_drift_status():
     """
     Dedicated drift monitoring endpoint
     """
-    from .monitoring.drift import get_drift_detector
+    from app.monitoring.drift import get_drift_detector
     drift_detector = get_drift_detector()
     return drift_detector.get_drift_summary(last_n_hours=168)  # 7 days
 
@@ -242,7 +243,7 @@ def get_performance_stats():
     """
     Dedicated performance metrics endpoint
     """
-    from .monitoring.quality import get_performance_tracker
+    from app.monitoring.quality import get_performance_tracker
     tracker = get_performance_tracker()
     return {
         "metrics": tracker.get_latest_metrics(),
@@ -269,7 +270,8 @@ async def get_advisory(request: Request, advisory_request: AdvisoryRequest):
             advisory_request.date,
             mapper=getattr(request.app.state, 'mapper', None),
             engineer=getattr(request.app.state, 'engineer', None),
-            predictor=getattr(request.app.state, 'predictor', None)
+            predictor=getattr(request.app.state, 'predictor', None),
+            language=advisory_request.language
         )
         
         if result['status'] == 'error':
@@ -292,11 +294,11 @@ async def get_advisory(request: Request, advisory_request: AdvisoryRequest):
         
         # ... (rest of logging logic same) ...
         # DRIFT DETECTION: Check if inputs are unusual
-        from .monitoring.drift import get_drift_detector
+        from app.monitoring.drift import get_drift_detector
         drift_detector = get_drift_detector()
         
         # PERFORMANCE TRACKING: Log prediction
-        from .monitoring.quality import get_performance_tracker
+        from app.monitoring.quality import get_performance_tracker
         tracker = get_performance_tracker()
         
         # Handle both old and new response formats
@@ -362,7 +364,8 @@ async def get_enhanced_advisory(request: Request, advisory_req: AdvisoryRequest)
             advisory_req.date,
             mapper=getattr(request.app.state, 'mapper', None),
             engineer=getattr(request.app.state, 'engineer', None),
-            predictor=getattr(request.app.state, 'predictor', None)
+            predictor=getattr(request.app.state, 'predictor', None),
+            language=advisory_req.language
         )
         
         if result['status'] != 'success':

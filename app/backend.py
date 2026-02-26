@@ -789,8 +789,21 @@ def build_error_response(error_type, error_message, user_friendly=True):
         }
     }
 
+def localize_payload(payload, lang='en'):
+    """
+    Recursively filters a payload to only include the requested language.
+    If a dictionary has 'en' and 'kn' keys, it returns the value for the requested lang.
+    """
+    if isinstance(payload, dict):
+        if "en" in payload and "kn" in payload:
+            return payload.get(lang, payload.get("en"))
+        return {k: localize_payload(v, lang) for k, v in payload.items()}
+    elif isinstance(payload, list):
+        return [localize_payload(i, lang) for i in payload]
+    return payload
+
 # ==================== B4: MAIN API LOGIC ====================
-def process_advisory_request(user_id, gps_lat, gps_long, date_str, mapper=None, engineer=None, predictor=None):
+def process_advisory_request(user_id, gps_lat, gps_long, date_str, mapper=None, engineer=None, predictor=None, language='en'):
     """
     Main backend pipeline: GPS → Features → ML → Farmer-Friendly Output
     With comprehensive error handling and Dependency Injection for performance
@@ -802,7 +815,7 @@ def process_advisory_request(user_id, gps_lat, gps_long, date_str, mapper=None, 
                 mapper = TalukMapper()
             taluk, geo_confidence = mapper.get_taluk(gps_lat, gps_long)
         except GPSOutOfBoundsError as e:
-            return build_error_response("gps_error", str(e))
+            return localize_payload(build_error_response("gps_error", str(e)), language)
         
         # Step 2: Compute Features (B2 + B5)
         try:
@@ -813,9 +826,9 @@ def process_advisory_request(user_id, gps_lat, gps_long, date_str, mapper=None, 
             rainfall_history = engineer.get_recent_rainfall_list(taluk, date_str, days=14)
             
         except InvalidDateError as e:
-            return build_error_response("date_error", str(e))
+            return localize_payload(build_error_response("date_error", str(e)), language)
         except InsufficientDataError as e:
-            return build_error_response("data_error", str(e))
+            return localize_payload(build_error_response("data_error", str(e)), language)
         
         # Step 3: ML Prediction (B3)
         try:
@@ -824,7 +837,7 @@ def process_advisory_request(user_id, gps_lat, gps_long, date_str, mapper=None, 
             ml_category, confidences, uncertainty_data = predictor.predict(features, taluk)
         except Exception as e:
             logger.error(f"ML prediction failed: {e}")
-            return build_error_response("system_error", "Prediction system error")
+            return localize_payload(build_error_response("system_error", "Prediction system error"), language)
         
         # Step 4: Live Weather (B6)
         live_rain, max_intensity, weather_status, weather_error = get_live_forecast_safe(gps_lat, gps_long)
@@ -857,12 +870,13 @@ def process_advisory_request(user_id, gps_lat, gps_long, date_str, mapper=None, 
             "last_updated": datetime.now().isoformat()
         }
         
-        return response
+        
+        return localize_payload(response, language)
         
     except Exception as e:
         # Catch-all for unexpected errors
         logger.error(f"Unexpected error in advisory request: {e}", exc_info=True)
-        return build_error_response("system_error", str(e), user_friendly=True)
+        return localize_payload(build_error_response("system_error", str(e), user_friendly=True), language)
 
 # ==================== TESTING ====================
 if __name__ == "__main__":
