@@ -2,6 +2,8 @@
 
 ML-powered rainfall prediction and farmer advisory system for Udupi District, Karnataka.
 
+**Live API:** [https://rainfall-advisory-api-1.onrender.com](https://rainfall-advisory-api-1.onrender.com)
+
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy)
 
 ## 🚀 Quick Start
@@ -153,7 +155,7 @@ Run before deploying to ensure production readiness!
 
 View system health:
 ```bash
-curl https://your-app.onrender.com/metrics
+curl https://rainfall-advisory-api-1.onrender.com/metrics
 ```
 
 Returns:
@@ -214,11 +216,10 @@ if (response.statusCode == 200) {
 
 ---
 
-## 📚 Documentation
-
 - [Complete MLOps Guide](docs/mlops_complete.md)
 - [Render Deployment Guide](docs/render_deployment.md)
 - [API Contract](docs/backend_api_contract.md)
+- [Detailed API Documentation (English/Kannada)](file:///Users/shameekyogi/.gemini/antigravity/brain/d0a27a69-f7c4-470d-a360-7523c6f15cd6/api_documentation.md)
 
 ---
 
@@ -266,5 +267,5 @@ Proprietary - For farmer advisory use only
 ---
 
 **Version**: 1.2  
-**Last Updated**: 2026-02-06  
+**Last Updated**: 2026-02-27  
 **Status**: Production-Ready ✅
