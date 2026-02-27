@@ -80,6 +80,14 @@ def verify_full_output():
         print(f"\n[D] FORMAT CHECK")
         print(f"  - Prediction Confidence Stats: {json.dumps(enhanced.get('prediction_confidence'), indent=2)}")
         
+        # E. Rainfall Intelligence (NEW)
+        print(f"\n[E] RAINFALL INTELLIGENCE (STRICT)")
+        ri = result.get('rainfall_intelligence', {})
+        print(f"  - Monthly Forecast: {json.dumps(ri.get('monthly_forecast'), indent=2)}")
+        print(f"  - Risk Indicators: {json.dumps(ri.get('risk_indicators'), indent=2)}")
+        print(f"  - Alert System: {json.dumps(ri.get('alert_system'), indent=2)}")
+        print(f"  - Water Stress: {json.dumps(ri.get('water_stress_indicator'), indent=2)}")
+        
     except Exception as e:
         print(f"Execution failed: {e}")
         import traceback

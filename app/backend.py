@@ -571,19 +571,18 @@ def get_live_forecast_safe(lat, lon):
             if valid_hourly:
                 max_intensity = max(valid_hourly)
         
-        return total_rain_7d, max_intensity, "success", None
+        return total_rain_7d, max_intensity, daily_rain, "success", None
         
     except requests.Timeout:
-        return None, None, "error", "Weather service timeout"
+        return None, None, [], "error", "Weather service timeout"
     except requests.RequestException as e:
-        return None, None, "error", "Weather service unavailable"
+        return None, None, [], "error", "Weather service unavailable"
     except Exception as e:
         logger.error(f"Weather API error: {e}")
-        return None, None, "error", "Weather data processing error"
+        return None, None, [], "error", "Weather data processing error"
 
 # ==================== FARMER-FRIENDLY OUTPUT BUILDER ====================
-# ==================== FARMER-FRIENDLY OUTPUT BUILDER ====================
-def build_farmer_response(ml_category, forecast_7day_mm, taluk, geo_confidence, confidences, uncertainty_data=None, max_intensity_mm_per_hr=0.0, rainfall_history=None, **kwargs):
+def build_farmer_response(ml_category, forecast_7day_mm, taluk, geo_confidence, confidences, uncertainty_data=None, max_intensity_mm_per_hr=0.0, rainfall_history=None, daily_forecast=None, **kwargs):
     """
     Constructs the final response using:
     1. ML Category (from calibrated probs)
@@ -615,6 +614,80 @@ def build_farmer_response(ml_category, forecast_7day_mm, taluk, geo_confidence, 
         # Standard Rules
         # Note: generate_alert now expects 'confidences' instead of 'ml_rainfall_mm'
         alert = generate_alert(ml_category, confidences, forecast_7day_mm)
+
+    # RECURRING INTELLIGENCE (NEW)
+    from app.core.advisory import AdvisoryService
+    advisory_service = AdvisoryService()
+    
+    current_date = datetime.now()
+    month = current_date.month
+    
+    # Next month prediction
+    next_month_info = advisory_service.predict_next_month_rainfall(month, taluk)
+    
+    # Monsoon alerts
+    monsoon_alerts = advisory_service.get_monsoon_alerts([{'rain_mm': forecast_7day_mm}], month)
+    
+    # Historical Context (Enhanced)
+    hist_context = advisory_service.get_historical_context(ml_category, forecast_7day_mm)
+    
+    # Water Stress Indicators
+    sm_status, sm_val = advisory_service.estimate_soil_moisture(rainfall_history)
+    water_stress = {
+        'deficit_signal': 'ACTIVE' if ml_category == 'Deficit' or sm_status in ['dry', 'extremely_dry'] else 'INACTIVE',
+        'surplus_signal': 'ACTIVE' if ml_category == 'Excess' or sm_status == 'saturated' else 'INACTIVE',
+        'soil_moisture_index': round(sm_val, 1)
+    }
+
+    # Estimate monthly rainfall from prediction (moved up for usage in intelligence object)
+    estimated_rain = {
+        'Excess': 150,
+        'Normal': 80,
+        'Deficit': 30
+    }.get(ml_category, 80)
+    
+    # Simple Terminology Mapping
+    term_map = {
+        'Deficit': 'Below Normal',
+        'Normal': 'Normal',
+        'Excess': 'Above Normal'
+    }
+    current_classification = term_map.get(ml_category, ml_category)
+    next_classification = term_map.get(next_month_info['classification'], next_month_info['classification'])
+
+    # Build the special Rainfall Intelligence Object (User Requirement)
+    rainfall_intelligence = {
+        "monthly_forecast": {
+            "current_month_predicted": current_classification,
+            "current_month_estimated_mm": f"{estimated_rain}mm",
+            "next_month_predicted": next_classification,
+            "next_month_estimated_mm": f"{int(next_month_info['predicted_mm'])}mm",
+            "rainfall_deviation_normal": hist_context['status'],
+            "rainfall_classification": current_classification
+        },
+        "daily_prediction_7d": daily_forecast if daily_forecast else [f"{forecast_7day_mm}mm total"],
+        "risk_indicators": {
+            "drought_probability": f"{int(confidences.get('Deficit', 0) * 100)}%",
+            "excess_rainfall_probability": f"{int(confidences.get('Excess', 0) * 100)}%",
+            "flood_risk_indicator": alert['severity']
+        },
+        "trend_insight": {
+            "historical_comparison": hist_context['assessment'],
+            "seasonal_trend": hist_context['season'],
+            "historical_normal_range": hist_context['normal_range']
+        },
+        "alert_system": {
+            "heavy_rainfall_alert": alert['severity'] in ['HIGH', 'CRITICAL'] and ml_category == 'Excess',
+            "delayed_monsoon_alert": monsoon_alerts['delayed_monsoon'],
+            "early_monsoon_alert": monsoon_alerts['early_monsoon'],
+            "extreme_rainfall_warning": alert['severity'] == 'CRITICAL'
+        },
+        "water_stress_indicator": {
+            "water_deficit_signal": water_stress['deficit_signal'],
+            "water_surplus_signal": water_stress['surplus_signal'],
+            "soil_moisture_index": water_stress['soil_moisture_index']
+        }
+    }
 
     # Instantiate advisory for detailed recommendations
     from app.core.advisory import AdvisoryService
@@ -704,7 +777,10 @@ def build_farmer_response(ml_category, forecast_7day_mm, taluk, geo_confidence, 
             "taluk": taluk,
             "district": "Udupi",
             "confidence": geo_confidence
-        }
+        },
+
+        # NEW: Strict Rainfall Intelligence (Requirement)
+        "rainfall_intelligence": rainfall_intelligence
     }
 
 # ==================== ERROR RESPONSE BUILDER ====================
@@ -840,7 +916,7 @@ def process_advisory_request(user_id, gps_lat, gps_long, date_str, mapper=None, 
             return build_error_response("system_error", "Prediction system error")
         
         # Step 4: Live Weather (B6)
-        live_rain, max_intensity, weather_status, weather_error = get_live_forecast_safe(gps_lat, gps_long)
+        live_rain, max_intensity, daily_forecast, weather_status, weather_error = get_live_forecast_safe(gps_lat, gps_long)
         
         # If weather API fails, use conservative fallback
         if weather_status == "error":
@@ -849,6 +925,7 @@ def process_advisory_request(user_id, gps_lat, gps_long, date_str, mapper=None, 
             # Better safe than sorry: Assume "Normal" rainfall (~5-10mm/day in monsoon)
             live_rain = 50.0 # Conservative estimate (moderate rain) to avoid missing potential wetness
             max_intensity = 0.0 # Cannot guess intensity without data
+            daily_forecast = []
             weather_status = "estimated"
         
         # Step 5: Build Farmer-Friendly Response
@@ -860,7 +937,8 @@ def process_advisory_request(user_id, gps_lat, gps_long, date_str, mapper=None, 
             confidences=confidences,
             uncertainty_data=uncertainty_data,
             max_intensity_mm_per_hr=max_intensity, # Added max_intensity
-            rainfall_history=rainfall_history # NEW
+            rainfall_history=rainfall_history, # NEW
+            daily_forecast=daily_forecast # NEW
         )
         
         # Add weather data source info

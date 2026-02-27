@@ -47,6 +47,7 @@ class AdvisoryRequest(BaseModel):
     date: str  # Format: YYYY-MM-DD
     crop: Optional[str] = 'paddy'
     language: Optional[str] = 'en'  # 'en' or 'kn'
+    intelligence_only: Optional[bool] = False # NEW: Rainfall Intelligence Only (No crop/irrigation advice)
     
     @field_validator('latitude')
     @classmethod
@@ -276,6 +277,12 @@ async def get_advisory(request: Request, advisory_request: AdvisoryRequest):
         
         from app.backend import localize_payload
         result = localize_payload(result, advisory_request.language)
+        
+        # NEW: Intelligence Only Mode
+        if advisory_request.intelligence_only:
+             # Strip out crop and action advice
+             keys_to_keep = ['status', 'main_status', 'rainfall', 'water_insights', 'location', 'technical_details', 'rainfall_intelligence', 'data_sources']
+             result = {k: v for k, v in result.items() if k in keys_to_keep}
         
         if result['status'] == 'error':
             logger.error(f"Advisory processing error: {result.get('message')}")

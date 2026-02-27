@@ -23,6 +23,64 @@ class AdvisoryService:
         'mango': {'low': 75, 'high': 110, 'critical_stage': 'flowering'}
     }
     
+    def predict_next_month_rainfall(self, month, taluk):
+        """
+        Predict next month's rainfall using historical averages for the taluk.
+        Returns: (category, deviation_percent, classification)
+        """
+        # Historical monthly averages for Udupi district (approximate for taluks)
+        monthly_normals = {
+            1: 5.0, 2: 10.0, 3: 15.0, 4: 60.0, 5: 250.0, 6: 850.0,
+            7: 1050.0, 8: 650.0, 9: 350.0, 10: 250.0, 11: 120.0, 12: 30.0
+        }
+        
+        next_month = (month % 12) + 1
+        normal_rain = monthly_normals.get(next_month, 100.0)
+        
+        # In a real scenario, this would use a separate ML model for T+1
+        # For this version, we use climatology context
+        classification = 'Normal'
+        if next_month in [6, 7, 8]: classification = 'Above Normal'
+        elif next_month in [12, 1, 2]: classification = 'Below Normal'
+        
+        return {
+            'month': next_month,
+            'predicted_mm': normal_rain,
+            'classification': classification,
+            'deviation_percent': 0.0  # Assumed normal for T+1
+        }
+
+    def get_monsoon_alerts(self, forecast_7day, month, rainfall_history=None):
+        """
+        Detect Monsoon onset anomalies: Early or Delayed
+        """
+        alerts = {
+            'delayed_monsoon': False,
+            'early_monsoon': False,
+            'early_monsoon_warning': {'en': '', 'kn': ''},
+            'delayed_monsoon_warning': {'en': '', 'kn': ''}
+        }
+        
+        total_7d_forecast = sum([d['rain_mm'] for d in forecast_7day])
+        
+        # Early Monsoon: Heavy rain (>100mm) in late May
+        if month == 5 and total_7d_forecast > 100:
+            alerts['early_monsoon'] = True
+            alerts['early_monsoon_warning'] = {
+                'en': 'EARLY MONSOON: Heavy pre-monsoon rain detected. Prepare fields early.',
+                'kn': 'ಮುಂಗಾರು ಆರಂಭ: ಭಾರೀ ಮುಂಗಾರು ಪೂರ್ವ ಮಳೆ ಪತ್ತೆಯಾಗಿದೆ. ತಯಾರಿಯಲ್ಲಿರಿ.'
+            }
+            
+        # Delayed Monsoon: Very dry (<10mm) in mid-June
+        if month == 6 and total_7d_forecast < 10:
+            alerts['delayed_monsoon'] = True
+            alerts['delayed_monsoon_warning'] = {
+                'en': 'DELAYED MONSOON: Dry spell detected in June. Conserve water.',
+                'kn': 'ಮುಂಗಾರು ವಿಳಂಬ: ಜೂನ್‌ನಲ್ಲಿ ಶುಷ್ಕ ಅವಧಿ ಪತ್ತೆಯಾಗಿದೆ. ನೀರು ಉಳಿಸಿ.'
+            }
+            
+        return alerts
+
     def get_7day_forecast(self, lat, lon):
         """Get 7-day weather forecast from Open-Meteo"""
         try:
